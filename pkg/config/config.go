@@ -1,4 +1,4 @@
-package pkg
+package config
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 
 const (
 	defaultLogLevel = "info"
-	configFilePath  = "../config.yaml"
+	configFilePath  = "config.yaml"
 )
 
 type ServerConfig struct {

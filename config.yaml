@@ -4,7 +4,7 @@ server:
   port: 8080
 
 database:
-  driver: postgres
+  driver: firebase
   host: localhost
   port: 5432
   name: exercises
@@ -23,3 +23,9 @@ database:
     sslcert: ""
     sslkey: ""
     sslrootcert: ""
+
+# Firebase (env-based). Prefer setting in .env
+# FIREBASE_PROJECT_ID: your-project-id
+# FIREBASE_CREDENTIALS_FILE: path/to/service-account.json
+# For ADC, you can also set GOOGLE_APPLICATION_CREDENTIALS to point to the service account JSON.
+# See: https://firebase.google.com/docs/admin/setup/#go
