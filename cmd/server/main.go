@@ -11,42 +11,68 @@ import (
 
 	http2 "github.com/theHinneh/budgeting/internal/adapters/api/http"
 	"github.com/theHinneh/budgeting/internal/adapters/db"
+	fbdb "github.com/theHinneh/budgeting/internal/adapters/db/firebase"
 	"github.com/theHinneh/budgeting/internal/adapters/db/postgres"
-	"github.com/theHinneh/budgeting/pkg"
+	"github.com/theHinneh/budgeting/internal/core/ports"
+	"github.com/theHinneh/budgeting/pkg/config"
+	"github.com/theHinneh/budgeting/pkg/logger"
 	"go.uber.org/zap"
 )
 
 func main() {
-	pkg.InitZaplogger()
+	logger.InitZaplogger()
 
-	cfg, err := pkg.Load()
+	cfg, err := config.Load()
 	if err != nil {
-		pkg.Fatal("Failed to load configuration", zap.Error(err))
+		logger.Fatal("Failed to load configuration", zap.Error(err))
 	}
 
 	dbConfig := cfg.GetDatabaseConfig()
 
-	dbInstance, err := postgres.NewDatabase(context.Background(), dbConfig)
-	if err != nil {
-		pkg.Fatal("Failed to initialize database", zap.Error(err))
+	var dbPort ports.DatabasePort
+	var fbInstance *fbdb.Database
+
+	switch dbConfig.Driver {
+	case "firebase":
+		logger.Info("Initializing Firebase database adapter")
+		fbInstance, err = fbdb.NewDatabase(context.Background(), cfg)
+		if err != nil {
+			logger.Fatal("Failed to initialize firebase", zap.Error(err))
+		}
+		dbPort = fbInstance
+		// No migrations for Firebase
+	case "postgres":
+		logger.Info("Initializing Postgres database adapter")
+		pgInstance, err := postgres.NewDatabase(context.Background(), dbConfig)
+		if err != nil {
+			logger.Fatal("Failed to initialize database", zap.Error(err))
+		}
+		dbPort = pgInstance
+
+		migration := db.Migrations{
+			DB:     pgInstance,
+			Models: db.GetModels(),
+		}
+		db.RunMigrations(migration)
+	default:
+		logger.Fatal("Unsupported DB_DRIVER. Use 'postgres' or 'firebase'")
 	}
 
 	defer func() {
-		if err := dbInstance.Close(); err != nil {
-			pkg.Error("Failed to close database", zap.Error(err))
+		if dbPort != nil {
+			if err := dbPort.Close(); err != nil {
+				logger.Error("Failed to close database", zap.Error(err))
+			}
 		}
 	}()
 
-	migration := db.Migrations{
-		DB:     dbInstance,
-		Models: db.GetModels(),
-	}
-	db.RunMigrations(migration)
-
-	healthHandler := http2.NewHealthHandler(cfg, dbInstance)
-	routes := http2.NewRouter(healthHandler)
+	healthHandler := http2.NewHealthHandler(cfg, dbPort)
+	routes := http2.NewRouter(healthHandler, fbInstance)
 
 	port := cfg.V.GetString("SERVER_PORT")
+	if port == "" {
+		port = cfg.V.GetString("server.port")
+	}
 	if port == "" {
 		port = "8080"
 	}
@@ -57,9 +83,9 @@ func main() {
 	}
 
 	go func() {
-		pkg.Info("Starting server on port " + port)
+		logger.Info("Starting server on port " + port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			pkg.Fatal("Failed to start server", zap.Error(err))
+			logger.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
 
@@ -67,13 +93,13 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	pkg.Info("Shutting down server...")
+	logger.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		pkg.Fatal("Server forced to shutdown", zap.Error(err))
+		logger.Fatal("Server forced to shutdown", zap.Error(err))
 	}
 
 	log.Println("Server exiting")

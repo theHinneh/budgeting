@@ -5,22 +5,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/theHinneh/budgeting/internal/adapters/api/middleware"
+	fbdb "github.com/theHinneh/budgeting/internal/adapters/db/firebase"
 )
 
-func NewRouter(healthHandler *HealthHandler) *gin.Engine {
+// NewRouter initializes the Gin engine, applies middleware, and registers all routes.
+func NewRouter(healthHandler *HealthHandler, fb *fbdb.Database) *gin.Engine {
 	router := gin.Default()
 
-	// Apply middleware
 	router.Use(middleware.CORS())
-
-	// Apply rate limiting to all routes - 60 requests per minute
 	router.Use(middleware.RateLimit(60, time.Minute))
 
-	// Register routes from modules
 	registerHealthRoutes(router, healthHandler)
+
+	// Conditionally register user routes that depends on Firebase
+	if fb != nil {
+		userHandler := NewUserHandler(fb)
+		RegisterUserRoutes(router, userHandler)
+	}
+
 	return router
 }
 
 func registerHealthRoutes(router *gin.Engine, healthHandler *HealthHandler) {
-	router.GET("health", healthHandler.HealthCheck)
+	router.GET("/health", healthHandler.HealthCheck)
 }

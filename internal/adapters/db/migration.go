@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/theHinneh/budgeting/pkg"
+	"github.com/theHinneh/budgeting/pkg/logger"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -21,7 +21,7 @@ func GetModels() []interface{} {
 }
 
 func RunMigrations(m Migrations) {
-	pkg.Info("Starting database migrations")
+	logger.Info("Starting database migrations")
 
 	if len(m.Models) == 0 {
 		m.Models = GetModels()
@@ -29,15 +29,15 @@ func RunMigrations(m Migrations) {
 
 	err := m.DB.AutoMigrate(m.Models...)
 	if err != nil {
-		pkg.Fatal("Failed to run migrations", zap.Error(err))
+		logger.Fatal("Failed to run migrations", zap.Error(err))
 	}
 
 	err = runCustomMigrations(m.DB.GetDB())
 	if err != nil {
-		pkg.Fatal("Failed to run custom migrations", zap.Error(err))
+		logger.Fatal("Failed to run custom migrations", zap.Error(err))
 	}
 
-	pkg.Info("Database migrations completed successfully")
+	logger.Info("Database migrations completed successfully")
 }
 
 // Custom migrations for more complex operations

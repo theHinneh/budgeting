@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/theHinneh/budgeting/internal/core/ports"
-	"github.com/theHinneh/budgeting/pkg"
+	"github.com/theHinneh/budgeting/pkg/config"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ type Database struct {
 
 var DB *Database
 
-func NewDatabase(ctx context.Context, cfg pkg.DatabaseConfig) (ports.DatabasePort, error) {
+func NewDatabase(ctx context.Context, cfg config.DatabaseConfig) (ports.DatabasePort, error) {
 	if err := validateDBConfig(&cfg); err != nil {
 		return nil, fmt.Errorf("invalid db config: %w", err)
 	}
@@ -58,7 +58,7 @@ func (d *Database) Transaction(ctx context.Context, fn func(tx *gorm.DB) error) 
 
 type PostgresConnector struct{}
 
-func (pc *PostgresConnector) ConnectWithContext(ctx context.Context, cfg *pkg.DatabaseConfig) (*gorm.DB, error) {
+func (pc *PostgresConnector) ConnectWithContext(ctx context.Context, cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Name, cfg.SSLMode,
@@ -86,7 +86,7 @@ func (pc *PostgresConnector) ConnectWithContext(ctx context.Context, cfg *pkg.Da
 	return db, nil
 }
 
-func connectWithRetry(ctx context.Context, connector *PostgresConnector, cfg *pkg.DatabaseConfig) (*Database, error) {
+func connectWithRetry(ctx context.Context, connector *PostgresConnector, cfg *config.DatabaseConfig) (*Database, error) {
 	maxRetries := 5
 	retryDelay := time.Second
 	var db *Database
@@ -113,7 +113,7 @@ func connectWithRetry(ctx context.Context, connector *PostgresConnector, cfg *pk
 	return nil, fmt.Errorf("failed to connect to db")
 }
 
-func validateDBConfig(cfg *pkg.DatabaseConfig) error {
+func validateDBConfig(cfg *config.DatabaseConfig) error {
 	if cfg.Driver != "postgres" {
 		return fmt.Errorf("unsupported driver: %s", cfg.Driver)
 	}

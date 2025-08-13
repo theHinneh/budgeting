@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/pkg"
+	"github.com/theHinneh/budgeting/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -52,7 +52,7 @@ func (s *SimpleRateLimiter) cleanup() {
 			if now.Sub(lastSeen) > s.window {
 				delete(s.requests, ip)
 				delete(s.lastRequest, ip)
-				pkg.Debug("Cleaned up rate limiter entry", zap.String("ip", ip))
+				logger.Debug("Cleaned up rate limiter entry", zap.String("ip", ip))
 			}
 		}
 		s.mu.Unlock()
@@ -93,7 +93,7 @@ func RateLimit(limit int, window time.Duration) gin.HandlerFunc {
 		}
 
 		if !limiter.Allow(ip) {
-			pkg.Error("Rate limit exceeded", zap.String("ip", ip))
+			logger.Error("Rate limit exceeded", zap.String("ip", ip))
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": "Rate limit exceeded. Please try again later.",
 			})
