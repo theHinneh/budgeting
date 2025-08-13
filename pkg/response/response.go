@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Error Response
+// ErrorResponse Error Response
 func ErrorResponse(ctx *gin.Context, message string, reason error) {
 	response := gin.H{
 		"status":  "error",
@@ -33,7 +33,7 @@ func SuccessWithStatusResponse(ctx *gin.Context, code int, message string, data 
 	ctx.JSON(code, response)
 }
 
-// Success Response
+// SuccessResponse Success Response
 func SuccessResponse(ctx *gin.Context, message string, data interface{}) {
 	response := gin.H{
 		"status":  "success",
@@ -62,7 +62,7 @@ func SuccessResponseData(ctx *gin.Context, data any) {
 	ctx.JSON(http.StatusOK, data)
 }
 
-// Generic Response with status code
+// GenericResponse Generic Response with status code
 func GenericResponse(ctx *gin.Context, code int, message string, data any) {
 	response := gin.H{
 		"status":  strconv.Itoa(code),
@@ -82,7 +82,7 @@ func TeapotResponse(ctx *gin.Context, data any) {
 	ctx.JSON(http.StatusTeapot, data)
 }
 
-// Failed Response
+// FailedResponse Failed Response
 func FailedResponse(ctx *gin.Context, message string, reason error) {
 	response := gin.H{
 		"status":  "failed",
@@ -104,7 +104,7 @@ func FailedResponseGeneric(ctx *gin.Context) {
 	ctx.JSON(http.StatusBadRequest, response)
 }
 
-// NotFound Response
+// NotFoundResponse NotFound Response
 func NotFoundResponse(ctx *gin.Context, message string, reason error) {
 	response := gin.H{
 		"status":  "not found",
@@ -117,7 +117,7 @@ func NotFoundResponse(ctx *gin.Context, message string, reason error) {
 	ctx.JSON(http.StatusNotFound, response)
 }
 
-// Unauthorized Response
+// UnauthorizedResponse Unauthorized Response
 func UnauthorizedResponse(ctx *gin.Context, message string, reason error) {
 
 	response := gin.H{
@@ -132,7 +132,7 @@ func UnauthorizedResponse(ctx *gin.Context, message string, reason error) {
 	ctx.JSON(http.StatusUnauthorized, response)
 }
 
-// Forbidden Response
+// ForbiddenResponse Forbidden Response
 func ForbiddenResponse(ctx *gin.Context, message string, reason error) {
 	response := gin.H{
 		"status":  "forbidden",
