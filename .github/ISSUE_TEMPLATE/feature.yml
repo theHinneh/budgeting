@@ -1,0 +1,33 @@
+name: "Feature (personal)"
+description: Suggest something for my Go budgeting backend.
+title: "[feat] <short summary>"
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Budgeting feature.
+
+  - type: input
+    id: summary
+    attributes:
+      label: What's the change?
+      description: A single sentence describing the feature.
+      placeholder: e.g. Add GET /budgets to list my budgets
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Touches
+      description: What parts of the project might change?
+      options:
+        - label: New endpoint/handler
+        - label: Update existing endpoint/handler
+        - label: New package/module
+        - label: DB schema/migration
+        - label: Config/env
+        - label: Logging/observability
+        - label: Docs
+        - label: Other (mention in notes)

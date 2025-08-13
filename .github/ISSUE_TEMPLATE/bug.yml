@@ -1,0 +1,69 @@
+name: "Bug (personal)"
+description: Bugs in my budgeting backend.
+title: "[bug] <short summary>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Budgeting bug fix.
+  - type: input
+    id: summary
+    attributes:
+      label: What broke?
+      description: One line summary.
+      placeholder: e.g., 500 from GET /health on startup
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What should have happened?
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Version/commit
+      placeholder: e.g., v0.1.0 or 1a2b3c4
+  - type: input
+    id: go-version
+    attributes:
+      label: Go
+      placeholder: e.g., go1.22.5
+  - type: input
+    id: os
+    attributes:
+      label: OS/Arch
+      placeholder: e.g., macOS 14.5 (arm64)
+  - type: input
+    id: database
+    attributes:
+      label: DB
+      placeholder: e.g., PostgreSQL 15.4
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste logs/stack traces. Rendered as shell.
+      render: shell
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+      description: How bad is it?
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I've removed secrets and sensitive data
+          required: true
