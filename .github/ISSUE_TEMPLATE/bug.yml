@@ -1,4 +1,4 @@
-name: "Bug (personal)"
+name: "Bug"
 description: Bugs in my budgeting backend.
 title: "[bug] <short summary>"
 labels: ["bug"]

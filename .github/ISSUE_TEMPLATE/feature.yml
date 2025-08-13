@@ -1,6 +1,6 @@
-name: "Feature (personal)"
+name: "Feature"
 description: Suggest something for my Go budgeting backend.
-title: "[feat] <short summary>"
+title: "[feature] <short summary>"
 labels: []
 body:
   - type: markdown
