@@ -30,11 +30,12 @@ func main() {
 	dbConfig := cfg.GetDatabaseConfig()
 
 	var dbPort ports.DatabasePort
+	var fbInstance *fbdb.Database
 
 	switch dbConfig.Driver {
 	case "firebase":
 		logger.Info("Initializing Firebase database adapter")
-		fbInstance, err := fbdb.NewDatabase(context.Background(), cfg)
+		fbInstance, err = fbdb.NewDatabase(context.Background(), cfg)
 		if err != nil {
 			logger.Fatal("Failed to initialize firebase", zap.Error(err))
 		}
@@ -66,9 +67,12 @@ func main() {
 	}()
 
 	healthHandler := http2.NewHealthHandler(cfg, dbPort)
-	routes := http2.NewRouter(healthHandler)
+	routes := http2.NewRouter(healthHandler, fbInstance)
 
 	port := cfg.V.GetString("SERVER_PORT")
+	if port == "" {
+		port = cfg.V.GetString("server.port")
+	}
 	if port == "" {
 		port = "8080"
 	}

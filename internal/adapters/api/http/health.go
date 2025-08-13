@@ -25,6 +25,9 @@ func (repo *HealthHandler) HealthCheck(ctx *gin.Context) {
 	env := "unknown"
 	if repo.Cfg != nil && repo.Cfg.V != nil {
 		env = repo.Cfg.V.GetString("APP_ENV")
+		if env == "" {
+			env = repo.Cfg.V.GetString("app_env")
+		}
 	}
 
 	healthData := gin.H{

@@ -71,25 +71,60 @@ func Load() (*Configuration, error) {
 	return &Configuration{V: v}, nil
 }
 
-// GetDatabaseConfig extracts PostgreSQL configuration from the loaded config
+// GetDatabaseConfig extracts database configuration. It supports both ENV-style keys
+// (e.g., DB_DRIVER) and YAML nested keys (e.g., database.driver) as fallbacks.
 func (c *Configuration) GetDatabaseConfig() DatabaseConfig {
+	getStr := func(primary string, fallbacks ...string) string {
+		if v := c.V.GetString(primary); v != "" {
+			return v
+		}
+		for _, fb := range fallbacks {
+			if v := c.V.GetString(fb); v != "" {
+				return v
+			}
+		}
+		return ""
+	}
+	getInt := func(primary string, fallbacks ...string) int {
+		if v := c.V.GetInt(primary); v != 0 {
+			return v
+		}
+		for _, fb := range fallbacks {
+			if v := c.V.GetInt(fb); v != 0 {
+				return v
+			}
+		}
+		return 0
+	}
+	getDur := func(primary string, fallbacks ...string) time.Duration {
+		if v := c.V.GetDuration(primary); v != 0 {
+			return v
+		}
+		for _, fb := range fallbacks {
+			if v := c.V.GetDuration(fb); v != 0 {
+				return v
+			}
+		}
+		return 0
+	}
+
 	return DatabaseConfig{
-		Driver:             c.V.GetString("DB_DRIVER"),
-		Host:               c.V.GetString("DB_HOST"),
-		Port:               c.V.GetString("DB_PORT"),
-		Name:               c.V.GetString("DB_NAME"),
-		User:               c.V.GetString("DB_USER"),
-		Password:           c.V.GetString("DB_PASSWORD"),
-		SSLMode:            c.V.GetString("DB_SSLMODE"),
-		MaxOpenConnections: c.V.GetInt("DB_MAX_OPEN_CONNS"),
-		MaxIdleConnections: c.V.GetInt("DB_MAX_IDLE_CONNS"),
-		ConnMaxLifetime:    c.V.GetDuration("DB_CONN_MAX_LIFETIME"),
-		ConnTimeout:        c.V.GetDuration("DB_CONN_TIMEOUT"),
-		PgSchema:           c.V.GetString("DB_PG_SCHEMA"),
-		PgSearchPath:       c.V.GetString("DB_PG_SEARCH_PATH"),
-		PgSSLCert:          c.V.GetString("DB_PG_SSLCERT"),
-		PgSSLKey:           c.V.GetString("DB_PG_SSLKEY"),
-		PgSSLRootCert:      c.V.GetString("DB_PG_SSLROOTCERT"),
+		Driver:             getStr("DB_DRIVER", "database.driver"),
+		Host:               getStr("DB_HOST", "database.host"),
+		Port:               getStr("DB_PORT", "database.port"),
+		Name:               getStr("DB_NAME", "database.name"),
+		User:               getStr("DB_USER", "database.user"),
+		Password:           getStr("DB_PASSWORD", "database.password"),
+		SSLMode:            getStr("DB_SSLMODE", "database.sslmode"),
+		MaxOpenConnections: getInt("DB_MAX_OPEN_CONNS", "database.max_open_connections"),
+		MaxIdleConnections: getInt("DB_MAX_IDLE_CONNS", "database.max_idle_connections"),
+		ConnMaxLifetime:    getDur("DB_CONN_MAX_LIFETIME", "database.connection_max_lifetime"),
+		ConnTimeout:        getDur("DB_CONN_TIMEOUT", "database.connection_timeout"),
+		PgSchema:           getStr("DB_PG_SCHEMA", "database.postgres.schema"),
+		PgSearchPath:       getStr("DB_PG_SEARCH_PATH", "database.postgres.search_path"),
+		PgSSLCert:          getStr("DB_PG_SSLCERT", "database.postgres.sslcert"),
+		PgSSLKey:           getStr("DB_PG_SSLKEY", "database.postgres.sslkey"),
+		PgSSLRootCert:      getStr("DB_PG_SSLROOTCERT", "database.postgres.sslrootcert"),
 	}
 }
 
