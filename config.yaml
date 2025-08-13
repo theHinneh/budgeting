@@ -1,0 +1,25 @@
+app_env: development
+
+server:
+  port: 8080
+
+database:
+  driver: postgres
+  host: localhost
+  port: 5432
+  name: exercises
+  user: user
+  password: password
+  sslmode: disable
+  max_open_connections: 10
+  max_idle_connections: 5
+  connection_max_lifetime: 30m
+  connection_timeout: 5s
+  auto_migrate: true
+
+  postgres:
+    schema: public
+    search_path: public
+    sslcert: ""
+    sslkey: ""
+    sslrootcert: ""
