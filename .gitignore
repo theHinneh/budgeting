@@ -33,4 +33,4 @@ config.yaml
  .vscode/
 
  # firebase
-budgeting-46*.json
+*-firebase-*.json
