@@ -13,7 +13,6 @@ import (
 
 var _ ports.UserAccountPort = (*Database)(nil)
 
-// CreateAuthUser creates a Firebase Auth user and returns UID.
 func (d *Database) CreateAuthUser(ctx context.Context, email, password, displayName string, phone *string) (string, error) {
 	params := (&fbAuth.UserToCreate{}).
 		Email(email).
@@ -29,13 +28,11 @@ func (d *Database) CreateAuthUser(ctx context.Context, email, password, displayN
 	return u.UID, nil
 }
 
-// GetAuthUser returns nil if the user exists, otherwise an error.
 func (d *Database) GetAuthUser(ctx context.Context, uid string) error {
 	_, err := d.Auth.GetUser(ctx, uid)
 	return err
 }
 
-// UpdateAuthUser updates email/phone/display name for an auth user.
 func (d *Database) UpdateAuthUser(ctx context.Context, uid string, email *string, displayName *string, phone *string) error {
 	var upd *fbAuth.UserToUpdate
 	if email != nil {
@@ -113,4 +110,14 @@ func (d *Database) UpdateProfile(ctx context.Context, uid string, updates map[st
 func (d *Database) DeleteProfile(ctx context.Context, uid string) error {
 	_, err := d.Firestore.Collection("users").Doc(uid).Delete(ctx)
 	return err
+}
+
+func (d *Database) UpdatePassword(ctx context.Context, uid string, newPassword string) error {
+	upd := (&fbAuth.UserToUpdate{}).Password(newPassword)
+	_, err := d.Auth.UpdateUser(ctx, uid, upd)
+	return err
+}
+
+func (d *Database) GeneratePasswordResetLink(ctx context.Context, email string) (string, error) {
+	return d.Auth.PasswordResetLink(ctx, email)
 }
