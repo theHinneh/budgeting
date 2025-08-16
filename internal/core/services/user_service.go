@@ -116,7 +116,24 @@ func (s *UserService) DeleteUser(ctx context.Context, uid string) error {
 	// Delete profile first (best-effort)
 	_ = s.accounts.DeleteProfile(ctx, uid)
 	// Then delete auth account
-	return s.accounts.DeleteAuthUser(ctx, uid)
+ return s.accounts.DeleteAuthUser(ctx, uid)
+}
+
+func (s *UserService) ForgotPassword(ctx context.Context, email string) (string, error) {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return "", ErrValidation
+	}
+	return s.accounts.GeneratePasswordResetLink(ctx, email)
+}
+
+func (s *UserService) ChangePassword(ctx context.Context, uid string, newPassword string) error {
+	uid = strings.TrimSpace(uid)
+	newPassword = strings.TrimSpace(newPassword)
+	if uid == "" || newPassword == "" {
+		return ErrValidation
+	}
+	return s.accounts.UpdatePassword(ctx, uid, newPassword)
 }
 
 var (

@@ -29,6 +29,9 @@ type UserServicePort interface {
 	GetUser(ctx context.Context, uid string) (*models.User, error)
 	UpdateUser(ctx context.Context, uid string, in UpdateUserInput) (*models.User, error)
 	DeleteUser(ctx context.Context, uid string) error
+
+	ForgotPassword(ctx context.Context, email string) (string, error)
+	ChangePassword(ctx context.Context, uid string, newPassword string) error
 }
 
 type UserAccountPort interface {
@@ -36,6 +39,9 @@ type UserAccountPort interface {
 	GetAuthUser(ctx context.Context, uid string) error
 	UpdateAuthUser(ctx context.Context, uid string, email *string, displayName *string, phone *string) error
 	DeleteAuthUser(ctx context.Context, uid string) error
+
+	UpdatePassword(ctx context.Context, uid string, newPassword string) error
+	GeneratePasswordResetLink(ctx context.Context, email string) (string, error)
 
 	SaveProfile(ctx context.Context, u *models.User) error
 	GetProfile(ctx context.Context, uid string) (*models.User, error)

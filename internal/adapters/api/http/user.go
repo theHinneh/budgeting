@@ -24,7 +24,6 @@ func NewUserHandler(svc ports.UserServicePort) *UserHandler {
 	return &UserHandler{Service: svc}
 }
 
-// RegisterUserRoutes registers user CRUD HTTP routes.
 func RegisterUserRoutes(router *gin.Engine, uh *UserHandler) {
 	logger.Info("Registering user routes...")
 	if router == nil || uh == nil {
@@ -36,7 +35,9 @@ func RegisterUserRoutes(router *gin.Engine, uh *UserHandler) {
 		g.GET("/:id", uh.GetUser)
 		g.PUT("/:id", uh.UpdateUser)
 		g.DELETE("/:id", uh.DeleteUser)
+		g.POST("/:id/password", uh.ChangePassword)
 	}
+	router.POST("/auth/forgot-password", uh.ForgotPassword)
 }
 
 type createUserRequest struct {
@@ -150,4 +151,57 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 	response.SuccessResponse(c, "user deleted", gin.H{"uid": uid})
+}
+
+func (h *UserHandler) ForgotPassword(c *gin.Context) {
+	type forgotPasswordRequest struct {
+		Email string `json:"email"`
+	}
+	var req forgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorResponse(c, "invalid request body", err)
+		return
+	}
+	email := strings.TrimSpace(req.Email)
+	if email == "" {
+		response.ErrorResponse(c, "email is required", nil)
+		return
+	}
+	link, err := h.Service.ForgotPassword(c.Request.Context(), email)
+	if err != nil {
+		response.ErrorResponse(c, "failed to generate reset link", err)
+		return
+	}
+	// showing link for easy test in Postman
+	response.SuccessResponse(c, "password reset link generated", gin.H{"reset_link": link})
+}
+
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	uid := strings.TrimSpace(c.Param("id"))
+	if uid == "" {
+		response.ErrorResponse(c, "missing user id", nil)
+		return
+	}
+	type changePasswordRequest struct {
+		NewPassword string `json:"new_password"`
+	}
+	var req changePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorResponse(c, "invalid request body", err)
+		return
+	}
+	newPwd := req.NewPassword
+	if newPwd == "" {
+		response.ErrorResponse(c, "new_password is required", nil)
+		return
+	}
+	if len(newPwd) < 6 {
+		response.ErrorResponse(c, "new_password must be at least 6 characters", nil)
+		return
+	}
+	if err := h.Service.ChangePassword(c.Request.Context(), uid, newPwd); err != nil {
+		response.ErrorResponse(c, "failed to change password", err)
+		return
+	}
+	response.SuccessResponse(c, "password changed", gin.H{"uid": uid})
 }
