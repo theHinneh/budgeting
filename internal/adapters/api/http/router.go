@@ -18,11 +18,22 @@ func NewRouter(healthHandler *HealthHandler, fb *fbdb.Database) *gin.Engine {
 
 	registerHealthRoutes(router, healthHandler)
 
-	// Conditionally register user routes that depends on Firebase
+	// Conditionally register routes that depend on Firebase
 	if fb != nil {
-		svc := services.NewUserService(fb)
-		userHandler := NewUserHandler(svc)
+		// Users
+		userSvc := services.NewUserService(fb)
+		userHandler := NewUserHandler(userSvc)
 		RegisterUserRoutes(router, userHandler)
+
+		// Incomes
+		incomeRepo := fb
+		incomeSvc := services.NewIncomeService(incomeRepo)
+		incomeHandler := NewIncomeHandler(incomeSvc)
+		RegisterIncomeRoutes(router, incomeHandler)
+
+		// Income Sources & processing
+		incomeSourceHandler := NewIncomeSourceHandler(incomeSvc)
+		RegisterIncomeSourceRoutes(router, incomeSourceHandler)
 	}
 
 	return router

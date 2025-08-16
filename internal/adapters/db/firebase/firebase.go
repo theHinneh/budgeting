@@ -19,7 +19,6 @@ type Database struct {
 	Auth      *fbAuth.Client
 }
 
-// NewDatabase initializes Firebase App and clients using env/config.
 func NewDatabase(ctx context.Context, cfg *config.Configuration) (*Database, error) {
 	getStr := func(primary string, fallbacks ...string) string {
 		if v := cfg.V.GetString(primary); v != "" {
