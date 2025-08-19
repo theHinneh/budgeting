@@ -36,7 +36,7 @@ func (d *Database) CreateIncome(ctx context.Context, income *models.Income) (*mo
 
 func (d *Database) ListIncomesByUser(ctx context.Context, userID string) ([]*models.Income, error) {
 	var res []*models.Income
-	iter := d.Firestore.Collection("incomes").Doc(userID).Collection("incomes").OrderBy("ReceivedAt", firestore.Desc).Documents(ctx)
+	iter := d.Firestore.Collection("incomes").Doc(userID).Collection("incomes").OrderBy("CreatedAt", firestore.Desc).Documents(ctx)
 	for {
 		dsnap, err := iter.Next()
 		if err != nil {

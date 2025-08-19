@@ -89,8 +89,9 @@ func (s *IncomeService) AddIncomeSource(ctx context.Context, in ports.AddIncomeS
 		return nil, ErrValidation
 	}
 	next := time.Now().UTC()
-	if in.NextPayAt != nil {
-		next = in.NextPayAt.UTC()
+	if in.NextPayAt != "" {
+		parsedDate, _ := time.Parse("2006-01-02", in.NextPayAt)
+		next = parsedDate.UTC()
 	}
 	src := &models.IncomeSource{
 		UID:       uuid.NewString(),
@@ -121,7 +122,6 @@ func (s *IncomeService) ProcessDueIncomes(ctx context.Context, userID string, no
 	if userID == "" {
 		return 0, ErrValidation
 	}
-	now = now.UTC()
 	sources, err := s.repo.ListDueIncomeSources(ctx, userID, now)
 	if err != nil {
 		return 0, err
@@ -132,8 +132,11 @@ func (s *IncomeService) ProcessDueIncomes(ctx context.Context, userID string, no
 			continue
 		}
 		next := src.NextPayAt.UTC()
-		// Generate one or more income entries to catch up until next > now
-		for !next.After(now) {
+
+		normalizedNext := time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, time.UTC)
+		normalizedNow := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
+		if normalizedNext.Equal(normalizedNow) {
 			_, err := s.repo.CreateIncome(ctx, &models.Income{
 				UID:       uuid.NewString(),
 				UserID:    userID,
