@@ -29,7 +29,7 @@ type AddIncomeSourceInput struct {
 	Amount    float64
 	Currency  string
 	Frequency PayFrequency
-	NextPayAt *time.Time
+	NextPayAt string
 	Notes     string
 }
 

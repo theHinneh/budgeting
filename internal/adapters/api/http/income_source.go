@@ -45,7 +45,7 @@ type addIncomeSourceRequest struct {
 
 func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 	userID := strings.TrimSpace(c.Param("id"))
-	layout := "2006-12-31"
+	//layout := "2006-12-31"
 
 	if userID == "" {
 		response.ErrorResponse(c, "missing user id", nil)
@@ -57,7 +57,7 @@ func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 		return
 	}
 
-	parsedTime, err := time.Parse(layout, req.NextPayAt)
+	//parsedTime, err := time.Parse(layout, req.NextPayAt)
 
 	src, err := h.Service.AddIncomeSource(c.Request.Context(), ports.AddIncomeSourceInput{
 		UserID:    userID,
@@ -65,7 +65,7 @@ func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 		Amount:    req.Amount,
 		Currency:  req.Currency,
 		Frequency: req.Frequency,
-		NextPayAt: &parsedTime,
+		NextPayAt: req.NextPayAt,
 		Notes:     req.Notes,
 	})
 	if err != nil {
