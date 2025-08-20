@@ -1,12 +1,12 @@
-package services
+package application
 
 import (
 	"context"
 	"strings"
 	"time"
 
-	"github.com/theHinneh/budgeting/internal/core/models"
-	"github.com/theHinneh/budgeting/internal/core/ports"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/domain"
 )
 
 type UserService struct {
@@ -47,18 +47,18 @@ func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) 
 	}
 
 	// Build and store profile
-	user := models.NewUser(uid, in.Username, in.Email, in.FirstName, in.LastName, in.PhoneNumber)
+	user := domain.NewUser(uid, in.Username, in.Email, in.FirstName, in.LastName, in.PhoneNumber)
 	if err := s.accounts.SaveProfile(ctx, user); err != nil {
 		return "", err
 	}
 	return uid, nil
 }
 
-func (s *UserService) GetUser(ctx context.Context, uid string) (*models.User, error) {
+func (s *UserService) GetUser(ctx context.Context, uid string) (*domain.User, error) {
 	return s.accounts.GetProfile(ctx, strings.TrimSpace(uid))
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.UpdateUserInput) (*models.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.UpdateUserInput) (*domain.User, error) {
 	uid = strings.TrimSpace(uid)
 	updates := map[string]interface{}{
 		"UpdatedAt": time.Now().UTC(),
@@ -116,7 +116,7 @@ func (s *UserService) DeleteUser(ctx context.Context, uid string) error {
 	// Delete profile first (best-effort)
 	_ = s.accounts.DeleteProfile(ctx, uid)
 	// Then delete auth account
- return s.accounts.DeleteAuthUser(ctx, uid)
+	return s.accounts.DeleteAuthUser(ctx, uid)
 }
 
 func (s *UserService) ForgotPassword(ctx context.Context, email string) (string, error) {

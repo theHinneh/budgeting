@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/theHinneh/budgeting/internal/core/models"
+	"github.com/theHinneh/budgeting/internal/domain"
 )
 
 type CreateUserInput struct {
@@ -26,8 +26,8 @@ type UpdateUserInput struct {
 
 type UserServicePort interface {
 	CreateUser(ctx context.Context, in CreateUserInput) (string, error)
-	GetUser(ctx context.Context, uid string) (*models.User, error)
-	UpdateUser(ctx context.Context, uid string, in UpdateUserInput) (*models.User, error)
+	GetUser(ctx context.Context, uid string) (*domain.User, error)
+	UpdateUser(ctx context.Context, uid string, in UpdateUserInput) (*domain.User, error)
 	DeleteUser(ctx context.Context, uid string) error
 
 	ForgotPassword(ctx context.Context, email string) (string, error)
@@ -43,8 +43,8 @@ type UserAccountPort interface {
 	UpdatePassword(ctx context.Context, uid string, newPassword string) error
 	GeneratePasswordResetLink(ctx context.Context, email string) (string, error)
 
-	SaveProfile(ctx context.Context, u *models.User) error
-	GetProfile(ctx context.Context, uid string) (*models.User, error)
+	SaveProfile(ctx context.Context, u *domain.User) error
+	GetProfile(ctx context.Context, uid string) (*domain.User, error)
 	UpdateProfile(ctx context.Context, uid string, updates map[string]interface{}) error
 	DeleteProfile(ctx context.Context, uid string) error
 }

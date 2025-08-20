@@ -2,10 +2,10 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/internal/core/ports"
-	"github.com/theHinneh/budgeting/pkg/config"
-	"github.com/theHinneh/budgeting/pkg/logger"
-	"github.com/theHinneh/budgeting/pkg/response"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/infrastructure/config"
+	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
+	"github.com/theHinneh/budgeting/internal/infrastructure/response"
 	"go.uber.org/zap"
 )
 

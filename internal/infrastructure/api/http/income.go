@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/internal/core/ports"
-	"github.com/theHinneh/budgeting/pkg/response"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/infrastructure/response"
 )
 
 type IncomeHandler struct {

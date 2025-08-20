@@ -4,30 +4,30 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/internal/adapters/api/middleware"
-	fbdb "github.com/theHinneh/budgeting/internal/adapters/db/firebase"
-	"github.com/theHinneh/budgeting/internal/core/services"
+	"github.com/theHinneh/budgeting/internal/application"
+	middleware2 "github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
+	fbdb "github.com/theHinneh/budgeting/internal/infrastructure/db/firebase"
 )
 
 // NewRouter initializes the Gin engine, applies middleware, and registers all routes.
 func NewRouter(healthHandler *HealthHandler, fb *fbdb.Database) *gin.Engine {
 	router := gin.Default()
 
-	router.Use(middleware.CORS())
-	router.Use(middleware.RateLimit(60, time.Minute))
+	router.Use(middleware2.CORS())
+	router.Use(middleware2.RateLimit(60, time.Minute))
 
 	registerHealthRoutes(router, healthHandler)
 
 	// Conditionally register routes that depend on Firebase
 	if fb != nil {
 		// Users
-		userSvc := services.NewUserService(fb)
+		userSvc := application.NewUserService(fb)
 		userHandler := NewUserHandler(userSvc)
 		RegisterUserRoutes(router, userHandler)
 
 		// Incomes
 		incomeRepo := fb
-		incomeSvc := services.NewIncomeService(incomeRepo)
+		incomeSvc := application.NewIncomeService(incomeRepo)
 		incomeHandler := NewIncomeHandler(incomeSvc)
 		RegisterIncomeRoutes(router, incomeHandler)
 

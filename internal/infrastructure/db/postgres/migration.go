@@ -1,7 +1,7 @@
-package db
+package postgres
 
 import (
-	"github.com/theHinneh/budgeting/pkg/logger"
+	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

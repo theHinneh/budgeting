@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/theHinneh/budgeting/internal/core/models"
-	"github.com/theHinneh/budgeting/internal/core/ports"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/domain"
 	"google.golang.org/api/iterator"
 )
 
 var _ ports.IncomeRepoPort = (*Database)(nil)
 
-func (d *Database) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
+func (d *Database) CreateIncome(ctx context.Context, income *domain.Income) (*domain.Income, error) {
 	if income == nil || income.UserID == "" || income.UID == "" {
 		return nil, fmt.Errorf("invalid income")
 	}
@@ -34,8 +34,8 @@ func (d *Database) CreateIncome(ctx context.Context, income *models.Income) (*mo
 	return income, nil
 }
 
-func (d *Database) ListIncomesByUser(ctx context.Context, userID string) ([]*models.Income, error) {
-	var res []*models.Income
+func (d *Database) ListIncomesByUser(ctx context.Context, userID string) ([]*domain.Income, error) {
+	var res []*domain.Income
 	iter := d.Firestore.Collection("incomes").Doc(userID).Collection("incomes").OrderBy("CreatedAt", firestore.Desc).Documents(ctx)
 	for {
 		dsnap, err := iter.Next()
@@ -45,7 +45,7 @@ func (d *Database) ListIncomesByUser(ctx context.Context, userID string) ([]*mod
 			}
 			return nil, err
 		}
-		var m models.Income
+		var m domain.Income
 		if err := dsnap.DataTo(&m); err != nil {
 			return nil, err
 		}
@@ -54,12 +54,12 @@ func (d *Database) ListIncomesByUser(ctx context.Context, userID string) ([]*mod
 	return res, nil
 }
 
-func (d *Database) GetIncome(ctx context.Context, userID string, incomeID string) (*models.Income, error) {
+func (d *Database) GetIncome(ctx context.Context, userID string, incomeID string) (*domain.Income, error) {
 	dsnap, err := d.Firestore.Collection("incomes").Doc(userID).Collection("incomes").Doc(incomeID).Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var m models.Income
+	var m domain.Income
 	if err := dsnap.DataTo(&m); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (d *Database) DeleteIncome(ctx context.Context, userID string, incomeID str
 	return err
 }
 
-func (d *Database) CreateIncomeSource(ctx context.Context, src *models.IncomeSource) (*models.IncomeSource, error) {
+func (d *Database) CreateIncomeSource(ctx context.Context, src *domain.IncomeSource) (*domain.IncomeSource, error) {
 	if src == nil || src.UserID == "" || src.UID == "" {
 		return nil, fmt.Errorf("invalid income source")
 	}
@@ -94,8 +94,8 @@ func (d *Database) CreateIncomeSource(ctx context.Context, src *models.IncomeSou
 	return src, nil
 }
 
-func (d *Database) ListIncomeSourcesByUser(ctx context.Context, userID string) ([]*models.IncomeSource, error) {
-	var res []*models.IncomeSource
+func (d *Database) ListIncomeSourcesByUser(ctx context.Context, userID string) ([]*domain.IncomeSource, error) {
+	var res []*domain.IncomeSource
 	iter := d.Firestore.Collection("incomes").Doc(userID).Collection("income_sources").OrderBy("Source", firestore.Asc).Documents(ctx)
 	for {
 		dsnap, err := iter.Next()
@@ -105,7 +105,7 @@ func (d *Database) ListIncomeSourcesByUser(ctx context.Context, userID string) (
 			}
 			return nil, err
 		}
-		var m models.IncomeSource
+		var m domain.IncomeSource
 		if err := dsnap.DataTo(&m); err != nil {
 			return nil, err
 		}
@@ -114,8 +114,8 @@ func (d *Database) ListIncomeSourcesByUser(ctx context.Context, userID string) (
 	return res, nil
 }
 
-func (d *Database) ListDueIncomeSources(ctx context.Context, userID string, before time.Time) ([]*models.IncomeSource, error) {
-	var res []*models.IncomeSource
+func (d *Database) ListDueIncomeSources(ctx context.Context, userID string, before time.Time) ([]*domain.IncomeSource, error) {
+	var res []*domain.IncomeSource
 	q := d.Firestore.Collection("incomes").Doc(userID).Collection("income_sources").Where("Active", "==", true).Where("NextPayAt", "<=", before)
 	iter := q.Documents(ctx)
 	for {
@@ -126,7 +126,7 @@ func (d *Database) ListDueIncomeSources(ctx context.Context, userID string, befo
 			}
 			return nil, err
 		}
-		var m models.IncomeSource
+		var m domain.IncomeSource
 		if err := dsnap.DataTo(&m); err != nil {
 			return nil, err
 		}

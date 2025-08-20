@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/pkg/logger"
+	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
 	"go.uber.org/zap"
 )
 

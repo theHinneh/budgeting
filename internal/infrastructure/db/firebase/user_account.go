@@ -7,8 +7,8 @@ import (
 
 	"cloud.google.com/go/firestore"
 	fbAuth "firebase.google.com/go/v4/auth"
-	"github.com/theHinneh/budgeting/internal/core/models"
-	"github.com/theHinneh/budgeting/internal/core/ports"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/domain"
 )
 
 var _ ports.UserAccountPort = (*Database)(nil)
@@ -66,7 +66,7 @@ func (d *Database) DeleteAuthUser(ctx context.Context, uid string) error {
 	return d.Auth.DeleteUser(ctx, uid)
 }
 
-func (d *Database) SaveProfile(ctx context.Context, u *models.User) error {
+func (d *Database) SaveProfile(ctx context.Context, u *domain.User) error {
 	if u == nil || strings.TrimSpace(u.UID) == "" {
 		return fmt.Errorf("invalid user profile")
 	}
@@ -86,12 +86,12 @@ func (d *Database) SaveProfile(ctx context.Context, u *models.User) error {
 	return err
 }
 
-func (d *Database) GetProfile(ctx context.Context, uid string) (*models.User, error) {
+func (d *Database) GetProfile(ctx context.Context, uid string) (*domain.User, error) {
 	dsnap, err := d.Firestore.Collection("users").Doc(uid).Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var m models.User
+	var m domain.User
 	if err := dsnap.DataTo(&m); err != nil {
 		return nil, err
 	}

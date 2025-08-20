@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/theHinneh/budgeting/internal/core/ports"
-	"github.com/theHinneh/budgeting/pkg/config"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

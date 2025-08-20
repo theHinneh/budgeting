@@ -7,7 +7,7 @@ import (
 	"cloud.google.com/go/firestore"
 	fb "firebase.google.com/go/v4"
 	fbAuth "firebase.google.com/go/v4/auth"
-	"github.com/theHinneh/budgeting/pkg/config"
+	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"gorm.io/gorm"

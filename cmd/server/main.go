@@ -9,13 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	http2 "github.com/theHinneh/budgeting/internal/adapters/api/http"
-	"github.com/theHinneh/budgeting/internal/adapters/db"
-	fbdb "github.com/theHinneh/budgeting/internal/adapters/db/firebase"
-	"github.com/theHinneh/budgeting/internal/adapters/db/postgres"
-	"github.com/theHinneh/budgeting/internal/core/ports"
-	"github.com/theHinneh/budgeting/pkg/config"
-	"github.com/theHinneh/budgeting/pkg/logger"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	http3 "github.com/theHinneh/budgeting/internal/infrastructure/api/http"
+	"github.com/theHinneh/budgeting/internal/infrastructure/config"
+	fbdb "github.com/theHinneh/budgeting/internal/infrastructure/db/firebase"
+	"github.com/theHinneh/budgeting/internal/infrastructure/db/postgres"
+	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
 	"go.uber.org/zap"
 )
 
@@ -49,11 +48,11 @@ func main() {
 		}
 		dbPort = pgInstance
 
-		migration := db.Migrations{
+		migration := postgres.Migrations{
 			DB:     pgInstance,
-			Models: db.GetModels(),
+			Models: postgres.GetModels(),
 		}
-		db.RunMigrations(migration)
+		postgres.RunMigrations(migration)
 	default:
 		logger.Fatal("Unsupported DB_DRIVER. Use 'postgres' or 'firebase'")
 	}
@@ -66,8 +65,8 @@ func main() {
 		}
 	}()
 
-	healthHandler := http2.NewHealthHandler(cfg, dbPort)
-	routes := http2.NewRouter(healthHandler, fbInstance)
+	healthHandler := http3.NewHealthHandler(cfg, dbPort)
+	routes := http3.NewRouter(healthHandler, fbInstance)
 
 	port := cfg.V.GetString("SERVER_PORT")
 	if port == "" {

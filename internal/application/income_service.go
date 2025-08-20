@@ -1,4 +1,4 @@
-package services
+package application
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/theHinneh/budgeting/internal/core/models"
-	"github.com/theHinneh/budgeting/internal/core/ports"
+	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/domain"
 )
 
 type IncomeService struct {
@@ -20,7 +20,7 @@ func NewIncomeService(repo ports.IncomeRepoPort) *IncomeService {
 
 var _ ports.IncomeServicePort = (*IncomeService)(nil)
 
-func (s *IncomeService) AddIncome(ctx context.Context, in ports.AddIncomeInput) (*models.Income, error) {
+func (s *IncomeService) AddIncome(ctx context.Context, in ports.AddIncomeInput) (*domain.Income, error) {
 	userID := strings.TrimSpace(in.UserID)
 	source := strings.TrimSpace(in.Source)
 	currency := strings.TrimSpace(in.Currency)
@@ -31,7 +31,7 @@ func (s *IncomeService) AddIncome(ctx context.Context, in ports.AddIncomeInput) 
 		currency = "USD"
 	}
 
-	income := &models.Income{
+	income := &domain.Income{
 		UID:       uuid.NewString(),
 		UserID:    userID,
 		Source:    source,
@@ -44,7 +44,7 @@ func (s *IncomeService) AddIncome(ctx context.Context, in ports.AddIncomeInput) 
 	return s.repo.CreateIncome(ctx, income)
 }
 
-func (s *IncomeService) ListIncomes(ctx context.Context, userID string) ([]*models.Income, error) {
+func (s *IncomeService) ListIncomes(ctx context.Context, userID string) ([]*domain.Income, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return nil, ErrValidation
@@ -74,7 +74,7 @@ func (s *IncomeService) DeleteIncome(ctx context.Context, userID string, incomeI
 	return nil
 }
 
-func (s *IncomeService) AddIncomeSource(ctx context.Context, in ports.AddIncomeSourceInput) (*models.IncomeSource, error) {
+func (s *IncomeService) AddIncomeSource(ctx context.Context, in ports.AddIncomeSourceInput) (*domain.IncomeSource, error) {
 	userID := strings.TrimSpace(in.UserID)
 	source := strings.TrimSpace(in.Source)
 	currency := strings.TrimSpace(in.Currency)
@@ -93,7 +93,7 @@ func (s *IncomeService) AddIncomeSource(ctx context.Context, in ports.AddIncomeS
 		parsedDate, _ := time.Parse("2006-01-02", in.NextPayAt)
 		next = parsedDate.UTC()
 	}
-	src := &models.IncomeSource{
+	src := &domain.IncomeSource{
 		UID:       uuid.NewString(),
 		UserID:    userID,
 		Source:    source,
@@ -109,7 +109,7 @@ func (s *IncomeService) AddIncomeSource(ctx context.Context, in ports.AddIncomeS
 	return s.repo.CreateIncomeSource(ctx, src)
 }
 
-func (s *IncomeService) ListIncomeSources(ctx context.Context, userID string) ([]*models.IncomeSource, error) {
+func (s *IncomeService) ListIncomeSources(ctx context.Context, userID string) ([]*domain.IncomeSource, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return nil, ErrValidation
@@ -137,7 +137,7 @@ func (s *IncomeService) ProcessDueIncomes(ctx context.Context, userID string, no
 		normalizedNow := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
 		if normalizedNext.Equal(normalizedNow) {
-			_, err := s.repo.CreateIncome(ctx, &models.Income{
+			_, err := s.repo.CreateIncome(ctx, &domain.Income{
 				UID:       uuid.NewString(),
 				UserID:    userID,
 				Source:    src.Source,
