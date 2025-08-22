@@ -22,7 +22,6 @@ func NewIncomeSourceHandler(svc ports.IncomeServicePort) *IncomeSourceHandler {
 	return &IncomeSourceHandler{Service: svc}
 }
 
-// RegisterIncomeSourceRoutes attaches endpoints under /users/:id
 func RegisterIncomeSourceRoutes(router *gin.Engine, h *IncomeSourceHandler) {
 	if router == nil || h == nil {
 		return

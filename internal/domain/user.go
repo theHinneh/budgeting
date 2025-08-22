@@ -6,17 +6,17 @@ import (
 )
 
 type User struct {
-	UID           string    `json:"uid"`
-	Username      string    `json:"username"`
-	Email         string    `json:"email"`
-	FirstName     string    `json:"firstname"`
-	LastName      string    `json:"lastname"`
-	PhoneNumber   *string   `json:"phone_number"`
-	ProviderID    string    `json:"provider_id,omitempty"` // e.g., "password", "google", "github"
-	PhotoURL      string    `json:"photo_url,omitempty"`
-	EmailVerified bool      `json:"email_verified"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	UID           string
+	Username      string
+	Email         string
+	FirstName     string
+	LastName      string
+	PhoneNumber   *string
+	ProviderID    string // e.g., "password", "google", "github"
+	PhotoURL      string
+	EmailVerified bool
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 func NewUser(uid, username, email, firstName, lastName string, phoneNumber *string) *User {

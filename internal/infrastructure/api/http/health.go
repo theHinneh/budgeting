@@ -1,60 +1,53 @@
 package http
 
 import (
+	"time"
+
+	"cloud.google.com/go/firestore"
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
-	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
 	"github.com/theHinneh/budgeting/internal/infrastructure/response"
-	"go.uber.org/zap"
 )
 
 type HealthHandler struct {
-	Cfg *config.Configuration
-	DB  ports.DatabasePort
+	config          *config.Configuration
+	firestoreClient *firestore.Client
 }
 
-func NewHealthHandler(cfg *config.Configuration, db ports.DatabasePort) *HealthHandler {
-	return &HealthHandler{Cfg: cfg, DB: db}
+func NewHealthHandler(cfg *config.Configuration, firestoreClient *firestore.Client) *HealthHandler {
+	return &HealthHandler{
+		config:          cfg,
+		firestoreClient: firestoreClient,
+	}
 }
 
 func (repo *HealthHandler) HealthCheck(ctx *gin.Context) {
-	logger.Info("Health check request received")
+	healthData := gin.H{
+		"status": "healthy",
+		"time":   time.Now().UTC(),
+	}
 
-	// Safely read environment to avoid nil pointer if Cfg is not set
 	env := "unknown"
-	if repo.Cfg != nil && repo.Cfg.V != nil {
-		env = repo.Cfg.V.GetString("APP_ENV")
+	if repo.config != nil && repo.config.V != nil {
+		env = repo.config.V.GetString("APP_ENV")
 		if env == "" {
-			env = repo.Cfg.V.GetString("app_env")
+			env = repo.config.V.GetString("app_env")
 		}
 	}
+	healthData["environment"] = env
 
-	healthData := gin.H{
-		"status":      "healthy",
-		"environment": env,
-	}
-
-	if repo.DB != nil {
-		if err := repo.DB.Ping(ctx.Request.Context()); err != nil {
+	if repo.firestoreClient != nil {
+		// Perform a simple Firestore operation to check connectivity
+		_, err := repo.firestoreClient.Collection("health_check").Doc("status").Get(ctx.Request.Context())
+		if err != nil && err.Error() != "rpc error: code = NotFound desc = document not found: projects/budgeting-bb0f5/databases/(default)/documents/health_check/status" {
 			healthData["database"] = gin.H{
 				"status":  "unhealthy",
 				"details": err.Error(),
 			}
-			healthData["status"] = "unhealthy"
-			logger.Error("Database health check failed", zap.Error(err))
 		} else {
-			healthData["database"] = gin.H{
-				"status": "healthy",
-			}
+			healthData["database"] = gin.H{"status": "healthy"}
 		}
-	} else {
-		healthData["database"] = gin.H{
-			"status":  "not_initialized",
-			"details": "Database connection not initialized",
-		}
-		logger.Error("Database not initialized during health check")
 	}
 
-	response.SuccessResponseData(ctx, healthData)
+	response.SuccessResponse(ctx, "Health check successful", healthData)
 }

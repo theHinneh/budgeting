@@ -21,7 +21,6 @@ func NewIncomeHandler(svc ports.IncomeServicePort) *IncomeHandler {
 	return &IncomeHandler{Service: svc}
 }
 
-// RegisterIncomeRoutes attaches income endpoints under /users/:id/incomes
 func RegisterIncomeRoutes(router *gin.Engine, ih *IncomeHandler) {
 	if router == nil || ih == nil {
 		return
@@ -47,16 +46,48 @@ func (h *IncomeHandler) AddIncome(c *gin.Context) {
 	}
 	income, err := h.Service.AddIncome(c.Request.Context(), ports.AddIncomeInput{
 		UserID:   userID,
-		Source:   req.Source,
-		Amount:   req.Amount,
-		Currency: req.Currency,
-		Notes:    req.Notes,
+		Source:   req.ToDomain().Source,
+		Amount:   req.ToDomain().Amount,
+		Currency: req.ToDomain().Currency,
+		Notes:    req.ToDomain().Notes,
 	})
 	if err != nil {
 		response.ErrorResponse(c, "failed to add income", err)
 		return
 	}
 	response.SuccessWithStatusResponse(c, http.StatusCreated, "income added", income)
+}
+
+func (h *IncomeHandler) AddIncomeSource(c *gin.Context) {
+	userID := strings.TrimSpace(c.Param("id"))
+	if userID == "" {
+		response.ErrorResponse(c, "missing user id", nil)
+		return
+	}
+	var req dtos.AddIncomeSourceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorResponse(c, "invalid request body", err)
+		return
+	}
+
+	input := ports.AddIncomeSourceInput{
+		UserID:    userID,
+		Source:    req.ToDomain().Source,
+		Amount:    req.ToDomain().Amount,
+		Currency:  req.ToDomain().Currency,
+		Frequency: ports.PayFrequency(req.ToDomain().Frequency),
+		NextPayAt: req.NextPayAt,
+		Notes:     req.ToDomain().Notes,
+	}
+
+	incomeSource, err := h.Service.AddIncomeSource(c.Request.Context(), input)
+	if err != nil {
+		response.ErrorResponse(c, "failed to add income source", err)
+		return
+	}
+
+	res := dtos.NewIncomeSourceResponse(incomeSource)
+	response.SuccessWithStatusResponse(c, http.StatusCreated, "income source added", res)
 }
 
 func (h *IncomeHandler) ListIncomes(c *gin.Context) {

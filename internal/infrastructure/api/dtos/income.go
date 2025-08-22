@@ -13,6 +13,15 @@ type AddIncomeRequest struct {
 	Notes    string  `json:"notes,omitempty"`
 }
 
+func (r *AddIncomeRequest) ToDomain() *domain.Income {
+	return &domain.Income{
+		Source:   r.Source,
+		Amount:   r.Amount,
+		Currency: r.Currency,
+		Notes:    r.Notes,
+	}
+}
+
 type IncomeResponse struct {
 	UID       string    `json:"uid"`
 	UserID    string    `json:"user_id"`
@@ -22,11 +31,6 @@ type IncomeResponse struct {
 	Notes     string    `json:"notes,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type ListIncomeResponse struct {
-	Incomes []*IncomeResponse `json:"incomes"`
-	Count   int               `json:"count"`
 }
 
 func NewIncomeResponse(income *domain.Income) *IncomeResponse {
@@ -63,6 +67,16 @@ type AddIncomeSourceRequest struct {
 	Frequency string  `json:"frequency" binding:"required,oneof=weekly biweekly monthly"`
 	NextPayAt string  `json:"next_pay_at,omitempty"`
 	Notes     string  `json:"notes,omitempty"`
+}
+
+func (r *AddIncomeSourceRequest) ToDomain() *domain.IncomeSource {
+	return &domain.IncomeSource{
+		Source:    r.Source,
+		Amount:    r.Amount,
+		Currency:  r.Currency,
+		Frequency: r.Frequency,
+		Notes:     r.Notes,
+	}
 }
 
 type IncomeSourceResponse struct {
@@ -112,4 +126,9 @@ func NewListIncomeSourceResponse(sources []*domain.IncomeSource) *ListIncomeSour
 		Sources: resps,
 		Count:   len(resps),
 	}
+}
+
+type ListIncomeResponse struct {
+	Incomes []*IncomeResponse `json:"incomes"`
+	Count   int               `json:"count"`
 }

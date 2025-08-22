@@ -17,18 +17,15 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 
 	registerHealthRoutes(router, healthHandler)
 
-	// Register routes that depend on application services
 	userHandler := NewUserHandler(userService)
 	RegisterUserRoutes(router, userHandler)
 
 	incomeHandler := NewIncomeHandler(incomeService)
 	RegisterIncomeRoutes(router, incomeHandler)
 
-	// Income Sources & processing
 	incomeSourceHandler := NewIncomeSourceHandler(incomeService)
 	RegisterIncomeSourceRoutes(router, incomeSourceHandler)
 
-	// Expenses
 	expenseHandler := NewExpenseHandler(expenseService)
 	RegisterExpenseRoutes(router, expenseHandler)
 

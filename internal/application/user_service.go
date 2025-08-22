@@ -10,11 +10,12 @@ import (
 )
 
 type UserService struct {
-	accounts ports.UserPersistencePort
+	userRepo      ports.UserRepository
+	authenticator ports.UserAuthenticator
 }
 
-func NewUserService(accounts ports.UserPersistencePort) *UserService {
-	return &UserService{accounts: accounts}
+func NewUserService(userRepo ports.UserRepository, authenticator ports.UserAuthenticator) *UserService {
+	return &UserService{userRepo: userRepo, authenticator: authenticator}
 }
 
 var _ ports.UserServicePort = (*UserService)(nil)
@@ -31,7 +32,7 @@ func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) 
 	if password != "" {
 		// Create auth user
 		display := strings.TrimSpace(strings.TrimSpace(in.FirstName + " " + in.LastName))
-		u, authErr := s.accounts.CreateAuthUser(ctx, in.Email, password, display, in.PhoneNumber)
+		u, authErr := s.authenticator.CreateAuthUser(ctx, in.Email, password, display, in.PhoneNumber)
 		if authErr != nil {
 			return "", authErr
 		}
@@ -42,7 +43,7 @@ func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) 
 			return "", ErrValidation
 		}
 		// Verify auth user exists
-		if authErr := s.accounts.GetAuthUser(ctx, uid); authErr != nil {
+		if authErr := s.authenticator.GetAuthUser(ctx, uid); authErr != nil {
 			return "", authErr
 		}
 	}
@@ -50,7 +51,7 @@ func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) 
 	// Build and store profile
 	user := domain.NewUser(uid, in.Username, in.Email, in.FirstName, in.LastName, in.PhoneNumber)
 
-	_, err = s.accounts.CreateUser(ctx, user)
+	_, err = s.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +59,7 @@ func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) 
 }
 
 func (s *UserService) GetUser(ctx context.Context, uid string) (*domain.User, error) {
-	return s.accounts.GetUser(ctx, strings.TrimSpace(uid))
+	return s.userRepo.GetUser(ctx, strings.TrimSpace(uid))
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.UpdateUserInput) (*domain.User, error) {
@@ -82,7 +83,7 @@ func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.Updat
 		updates["PhoneNumber"] = in.PhoneNumber
 	}
 
-	user, err := s.accounts.GetUser(ctx, uid)
+	user, err := s.userRepo.GetUser(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +105,7 @@ func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.Updat
 	}
 	user.UpdatedAt = time.Now().UTC()
 
-	updatedUser, err := s.accounts.UpdateUser(ctx, user)
+	updatedUser, err := s.userRepo.UpdateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.Updat
 		}
 	}
 	if in.Email != nil || in.PhoneNumber != nil || displayName != nil {
-		if err := s.accounts.UpdateAuthUser(ctx, uid, in.Email, displayName, in.PhoneNumber); err != nil {
+		if err := s.authenticator.UpdateAuthUser(ctx, uid, in.Email, displayName, in.PhoneNumber); err != nil {
 			return updatedUser, err
 		}
 	}
@@ -135,8 +136,8 @@ func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.Updat
 
 func (s *UserService) DeleteUser(ctx context.Context, uid string) error {
 	uid = strings.TrimSpace(uid)
-	_ = s.accounts.DeleteUser(ctx, uid)
-	return s.accounts.DeleteAuthUser(ctx, uid)
+	_ = s.userRepo.DeleteUser(ctx, uid)
+	return s.authenticator.DeleteAuthUser(ctx, uid)
 }
 
 func (s *UserService) ForgotPassword(ctx context.Context, email string) (string, error) {
@@ -144,7 +145,7 @@ func (s *UserService) ForgotPassword(ctx context.Context, email string) (string,
 	if email == "" {
 		return "", ErrValidation
 	}
-	return s.accounts.GeneratePasswordResetLink(ctx, email)
+	return s.authenticator.GeneratePasswordResetLink(ctx, email)
 }
 
 func (s *UserService) ChangePassword(ctx context.Context, uid string, newPassword string) error {
@@ -153,5 +154,5 @@ func (s *UserService) ChangePassword(ctx context.Context, uid string, newPasswor
 	if uid == "" || newPassword == "" {
 		return ErrValidation
 	}
-	return s.accounts.UpdatePassword(ctx, uid, newPassword)
+	return s.authenticator.UpdatePassword(ctx, uid, newPassword)
 }

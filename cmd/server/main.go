@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/theHinneh/budgeting/internal/application"
-	"github.com/theHinneh/budgeting/internal/application/ports"
 	http3 "github.com/theHinneh/budgeting/internal/infrastructure/api/http"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	fbdb "github.com/theHinneh/budgeting/internal/infrastructure/db/firebase"
@@ -28,7 +27,6 @@ func main() {
 
 	dbConfig := cfg.GetDatabaseConfig()
 
-	var dbPort ports.DatabasePort
 	var fbInstance *fbdb.Database
 
 	switch dbConfig.Driver {
@@ -38,25 +36,30 @@ func main() {
 		if err != nil {
 			logger.Fatal("Failed to initialize firebase", zap.Error(err))
 		}
-		dbPort = fbInstance
-		// No migrations for Firebase
 	default:
 		logger.Fatal("Unsupported DB_DRIVER. Only 'firebase' is supported.")
 	}
 
 	defer func() {
-		if dbPort != nil {
-			if err := dbPort.Close(); err != nil {
+		if fbInstance != nil {
+			if err := fbInstance.Close(); err != nil {
 				logger.Error("Failed to close database", zap.Error(err))
 			}
 		}
 	}()
 
-	healthHandler := http3.NewHealthHandler(cfg, dbPort)
+	healthHandler := http3.NewHealthHandler(cfg, fbInstance.FirestoreClient)
 
-	userService := application.NewUserService(fbInstance)
-	incomeService := application.NewIncomeService(fbInstance)
-	expenseService := application.NewExpenseService(fbInstance)
+	userService := application.NewUserService(
+		fbInstance.UserRepository,
+		fbInstance.UserAuthenticator,
+	)
+	incomeService := application.NewIncomeService(
+		fbInstance.IncomeRepository,
+	)
+	expenseService := application.NewExpenseService(
+		fbInstance.ExpenseRepository,
+	)
 
 	routes := http3.NewRouter(healthHandler, userService, incomeService, expenseService)
 

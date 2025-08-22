@@ -13,6 +13,15 @@ type AddExpenseRequest struct {
 	Notes    string  `json:"notes,omitempty"`
 }
 
+func (r *AddExpenseRequest) ToDomain() *domain.Expense {
+	return &domain.Expense{
+		Source:   r.Source,
+		Amount:   r.Amount,
+		Currency: r.Currency,
+		Notes:    r.Notes,
+	}
+}
+
 type ExpenseResponse struct {
 	UID       string    `json:"uid"`
 	UserID    string    `json:"user_id"`
@@ -22,11 +31,6 @@ type ExpenseResponse struct {
 	Notes     string    `json:"notes,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type ListExpenseResponse struct {
-	Expenses []*ExpenseResponse `json:"expenses"`
-	Count    int                `json:"count"`
 }
 
 func NewExpenseResponse(expense *domain.Expense) *ExpenseResponse {
@@ -43,6 +47,11 @@ func NewExpenseResponse(expense *domain.Expense) *ExpenseResponse {
 		CreatedAt: expense.CreatedAt,
 		UpdatedAt: expense.UpdatedAt,
 	}
+}
+
+type ListExpenseResponse struct {
+	Expenses []*ExpenseResponse `json:"expenses"`
+	Count    int                `json:"count"`
 }
 
 func NewListExpenseResponse(expenses []*domain.Expense) *ListExpenseResponse {
