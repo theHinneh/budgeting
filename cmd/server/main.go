@@ -13,7 +13,6 @@ import (
 	http3 "github.com/theHinneh/budgeting/internal/infrastructure/api/http"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	fbdb "github.com/theHinneh/budgeting/internal/infrastructure/db/firebase"
-	"github.com/theHinneh/budgeting/internal/infrastructure/db/postgres"
 	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
 	"go.uber.org/zap"
 )
@@ -40,21 +39,8 @@ func main() {
 		}
 		dbPort = fbInstance
 		// No migrations for Firebase
-	case "postgres":
-		logger.Info("Initializing Postgres database adapter")
-		pgInstance, err := postgres.NewDatabase(context.Background(), dbConfig)
-		if err != nil {
-			logger.Fatal("Failed to initialize database", zap.Error(err))
-		}
-		dbPort = pgInstance
-
-		migration := postgres.Migrations{
-			DB:     pgInstance,
-			Models: postgres.GetModels(),
-		}
-		postgres.RunMigrations(migration)
 	default:
-		logger.Fatal("Unsupported DB_DRIVER. Use 'postgres' or 'firebase'")
+		logger.Fatal("Unsupported DB_DRIVER. Only 'firebase' is supported.")
 	}
 
 	defer func() {
