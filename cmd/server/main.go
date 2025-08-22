@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/theHinneh/budgeting/internal/application"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	http3 "github.com/theHinneh/budgeting/internal/infrastructure/api/http"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
@@ -52,7 +53,12 @@ func main() {
 	}()
 
 	healthHandler := http3.NewHealthHandler(cfg, dbPort)
-	routes := http3.NewRouter(healthHandler, fbInstance)
+
+	userService := application.NewUserService(fbInstance)
+	incomeService := application.NewIncomeService(fbInstance)
+	expenseService := application.NewExpenseService(fbInstance)
+
+	routes := http3.NewRouter(healthHandler, userService, incomeService, expenseService)
 
 	port := cfg.V.GetString("SERVER_PORT")
 	if port == "" {

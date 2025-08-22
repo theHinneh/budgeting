@@ -12,7 +12,6 @@ require (
 	go.uber.org/zap v1.27.0
 	google.golang.org/api v0.239.0
 	google.golang.org/grpc v1.73.0
-	gorm.io/gorm v1.30.1
 )
 
 require (
@@ -54,8 +53,6 @@ require (
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/infrastructure/api/dtos"
 	"github.com/theHinneh/budgeting/internal/infrastructure/response"
 )
 
@@ -34,15 +35,6 @@ func RegisterIncomeSourceRoutes(router *gin.Engine, h *IncomeSourceHandler) {
 	}
 }
 
-type addIncomeSourceRequest struct {
-	Source    string             `json:"source"`
-	Amount    float64            `json:"amount"`
-	Currency  string             `json:"currency"`
-	Frequency ports.PayFrequency `json:"frequency"`
-	NextPayAt string             `json:"next_pay_at"`
-	Notes     string             `json:"notes"`
-}
-
 func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 	userID := strings.TrimSpace(c.Param("id"))
 	//layout := "2006-12-31"
@@ -51,7 +43,7 @@ func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 		response.ErrorResponse(c, "missing user id", nil)
 		return
 	}
-	var req addIncomeSourceRequest
+	var req dtos.AddIncomeSourceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorResponse(c, "invalid request body", err)
 		return
@@ -64,7 +56,7 @@ func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 		Source:    req.Source,
 		Amount:    req.Amount,
 		Currency:  req.Currency,
-		Frequency: req.Frequency,
+		Frequency: ports.PayFrequency(req.Frequency),
 		NextPayAt: req.NextPayAt,
 		Notes:     req.Notes,
 	})

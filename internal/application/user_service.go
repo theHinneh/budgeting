@@ -10,10 +10,10 @@ import (
 )
 
 type UserService struct {
-	accounts ports.UserAccountPort
+	accounts ports.UserPersistencePort
 }
 
-func NewUserService(accounts ports.UserAccountPort) *UserService {
+func NewUserService(accounts ports.UserPersistencePort) *UserService {
 	return &UserService{accounts: accounts}
 }
 
@@ -27,12 +27,13 @@ func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) 
 
 	var uid string
 	password := strings.TrimSpace(in.Password)
+	var err error
 	if password != "" {
 		// Create auth user
 		display := strings.TrimSpace(strings.TrimSpace(in.FirstName + " " + in.LastName))
-		u, err := s.accounts.CreateAuthUser(ctx, in.Email, password, display, in.PhoneNumber)
-		if err != nil {
-			return "", err
+		u, authErr := s.accounts.CreateAuthUser(ctx, in.Email, password, display, in.PhoneNumber)
+		if authErr != nil {
+			return "", authErr
 		}
 		uid = u
 	} else {
@@ -41,21 +42,23 @@ func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) 
 			return "", ErrValidation
 		}
 		// Verify auth user exists
-		if err := s.accounts.GetAuthUser(ctx, uid); err != nil {
-			return "", err
+		if authErr := s.accounts.GetAuthUser(ctx, uid); authErr != nil {
+			return "", authErr
 		}
 	}
 
 	// Build and store profile
 	user := domain.NewUser(uid, in.Username, in.Email, in.FirstName, in.LastName, in.PhoneNumber)
-	if err := s.accounts.SaveProfile(ctx, user); err != nil {
+
+	_, err = s.accounts.CreateUser(ctx, user)
+	if err != nil {
 		return "", err
 	}
 	return uid, nil
 }
 
 func (s *UserService) GetUser(ctx context.Context, uid string) (*domain.User, error) {
-	return s.accounts.GetProfile(ctx, strings.TrimSpace(uid))
+	return s.accounts.GetUser(ctx, strings.TrimSpace(uid))
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.UpdateUserInput) (*domain.User, error) {
@@ -79,14 +82,33 @@ func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.Updat
 		updates["PhoneNumber"] = in.PhoneNumber
 	}
 
-	// Update profile first if there are any changes beyond UpdatedAt
-	if len(updates) > 1 {
-		if err := s.accounts.UpdateProfile(ctx, uid, updates); err != nil {
-			return nil, err
-		}
+	user, err := s.accounts.GetUser(ctx, uid)
+	if err != nil {
+		return nil, err
 	}
 
-	// Update auth fields
+	if in.Username != nil {
+		user.Username = *in.Username
+	}
+	if in.Email != nil {
+		user.Email = *in.Email
+	}
+	if in.FirstName != nil {
+		user.FirstName = *in.FirstName
+	}
+	if in.LastName != nil {
+		user.LastName = *in.LastName
+	}
+	if in.PhoneNumber != nil {
+		user.PhoneNumber = in.PhoneNumber
+	}
+	user.UpdatedAt = time.Now().UTC()
+
+	updatedUser, err := s.accounts.UpdateUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
 	var displayName *string
 	if in.FirstName != nil || in.LastName != nil {
 		fn := ""
@@ -104,18 +126,16 @@ func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.Updat
 	}
 	if in.Email != nil || in.PhoneNumber != nil || displayName != nil {
 		if err := s.accounts.UpdateAuthUser(ctx, uid, in.Email, displayName, in.PhoneNumber); err != nil {
-			return nil, err
+			return updatedUser, err
 		}
 	}
 
-	return s.accounts.GetProfile(ctx, uid)
+	return updatedUser, nil
 }
 
 func (s *UserService) DeleteUser(ctx context.Context, uid string) error {
 	uid = strings.TrimSpace(uid)
-	// Delete profile first (best-effort)
-	_ = s.accounts.DeleteProfile(ctx, uid)
-	// Then delete auth account
+	_ = s.accounts.DeleteUser(ctx, uid)
 	return s.accounts.DeleteAuthUser(ctx, uid)
 }
 
@@ -135,11 +155,3 @@ func (s *UserService) ChangePassword(ctx context.Context, uid string, newPasswor
 	}
 	return s.accounts.UpdatePassword(ctx, uid, newPassword)
 }
-
-var (
-	ErrValidation = &ValidationError{msg: "invalid input"}
-)
-
-type ValidationError struct{ msg string }
-
-func (e *ValidationError) Error() string { return e.msg }

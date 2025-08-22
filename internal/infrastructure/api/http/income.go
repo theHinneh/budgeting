@@ -3,10 +3,10 @@ package http
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/theHinneh/budgeting/internal/application/ports"
+	"github.com/theHinneh/budgeting/internal/infrastructure/api/dtos"
 	"github.com/theHinneh/budgeting/internal/infrastructure/response"
 )
 
@@ -34,21 +34,13 @@ func RegisterIncomeRoutes(router *gin.Engine, ih *IncomeHandler) {
 	}
 }
 
-type addIncomeRequest struct {
-	Source     string     `json:"source"`
-	Amount     float64    `json:"amount"`
-	Currency   string     `json:"currency"`
-	ReceivedAt *time.Time `json:"received_at"`
-	Notes      string     `json:"notes"`
-}
-
 func (h *IncomeHandler) AddIncome(c *gin.Context) {
 	userID := strings.TrimSpace(c.Param("id"))
 	if userID == "" {
 		response.ErrorResponse(c, "missing user id", nil)
 		return
 	}
-	var req addIncomeRequest
+	var req dtos.AddIncomeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorResponse(c, "invalid request body", err)
 		return
