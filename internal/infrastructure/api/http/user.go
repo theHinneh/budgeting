@@ -6,9 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/theHinneh/budgeting/internal/application/ports"
-	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
 	"github.com/theHinneh/budgeting/internal/infrastructure/response"
-	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,22 +20,6 @@ func NewUserHandler(svc ports.UserServicePort) *UserHandler {
 		return nil
 	}
 	return &UserHandler{Service: svc}
-}
-
-func RegisterUserRoutes(router *gin.Engine, uh *UserHandler) {
-	logger.Info("Registering user routes...")
-	if router == nil || uh == nil {
-		return
-	}
-	g := router.Group("/users")
-	{
-		g.POST("", uh.CreateUser)
-		g.GET("/:id", uh.GetUser)
-		g.PUT("/:id", uh.UpdateUser)
-		g.DELETE("/:id", uh.DeleteUser)
-		g.POST("/:id/password", uh.ChangePassword)
-	}
-	router.POST("/auth/forgot-password", uh.ForgotPassword)
 }
 
 type createUserRequest struct {
@@ -81,7 +63,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		Password:    req.Password,
 	})
 	if err != nil {
-		logger.Error("create user failed", zap.Error(err))
 		response.ErrorResponse(c, "failed to create user", err)
 		return
 	}
@@ -131,7 +112,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		PhoneNumber: req.PhoneNumber,
 	})
 	if err != nil {
-		logger.Error("failed to update user", zap.String("uid", uid), zap.Error(err))
 		response.ErrorResponse(c, "failed to update user", err)
 		return
 	}
@@ -146,7 +126,6 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 	if err := h.Service.DeleteUser(ctx, uid); err != nil {
-		logger.Error("failed to delete user", zap.String("uid", uid), zap.Error(err))
 		response.ErrorResponse(c, "failed to delete user", err)
 		return
 	}

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/theHinneh/budgeting/internal/application"
-	http3 "github.com/theHinneh/budgeting/internal/infrastructure/api/http"
+	api_http "github.com/theHinneh/budgeting/internal/infrastructure/api/http"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	fbdb "github.com/theHinneh/budgeting/internal/infrastructure/db/firebase"
 	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
@@ -49,7 +49,7 @@ func main() {
 		}
 	}()
 
-	healthHandler := http3.NewHealthHandler(cfg, fbInstance.FirestoreClient)
+	healthHandler := api_http.NewHealthHandler(cfg, fbInstance.FirestoreClient)
 
 	userService := application.NewUserService(
 		fbInstance.UserRepository,
@@ -62,7 +62,7 @@ func main() {
 		fbInstance.ExpenseRepository,
 	)
 
-	routes := http3.NewRouter(healthHandler, userService, incomeService, expenseService)
+	routes := api_http.NewRouter(healthHandler, userService, incomeService, expenseService)
 
 	port := cfg.V.GetString("SERVER_PORT")
 	if port == "" {

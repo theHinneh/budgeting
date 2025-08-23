@@ -22,18 +22,6 @@ func NewIncomeSourceHandler(svc ports.IncomeServicePort) *IncomeSourceHandler {
 	return &IncomeSourceHandler{Service: svc}
 }
 
-func RegisterIncomeSourceRoutes(router *gin.Engine, h *IncomeSourceHandler) {
-	if router == nil || h == nil {
-		return
-	}
-	g := router.Group("/users/:id")
-	{
-		g.POST("/income-sources", h.AddIncomeSource)
-		g.GET("/income-sources", h.ListIncomeSources)
-		g.POST("/incomes/process-due", h.ProcessDueIncomes)
-	}
-}
-
 func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 	userID := strings.TrimSpace(c.Param("id"))
 	//layout := "2006-12-31"

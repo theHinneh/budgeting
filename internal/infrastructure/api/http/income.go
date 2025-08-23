@@ -21,18 +21,6 @@ func NewIncomeHandler(svc ports.IncomeServicePort) *IncomeHandler {
 	return &IncomeHandler{Service: svc}
 }
 
-func RegisterIncomeRoutes(router *gin.Engine, ih *IncomeHandler) {
-	if router == nil || ih == nil {
-		return
-	}
-	g := router.Group("/users/:id/incomes")
-	{
-		g.POST("", ih.AddIncome)
-		g.GET("", ih.ListIncomes)
-		g.DELETE(":incomeId", ih.DeleteIncome)
-	}
-}
-
 func (h *IncomeHandler) AddIncome(c *gin.Context) {
 	userID := strings.TrimSpace(c.Param("id"))
 	if userID == "" {

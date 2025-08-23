@@ -18,17 +18,6 @@ func NewExpenseHandler(expenseService ports.ExpenseServicePort) *ExpenseHandler 
 	return &ExpenseHandler{expenseService: expenseService}
 }
 
-func RegisterExpenseRoutes(router *gin.Engine, handler *ExpenseHandler) {
-	expenseRoutes := router.Group("/users/:id/expenses")
-	{
-		expenseRoutes.POST("", handler.AddExpense)
-		expenseRoutes.GET("", handler.ListExpenses)
-		expenseRoutes.GET("/:expenseID", handler.GetExpense)
-		expenseRoutes.PUT("/:expenseID", handler.UpdateExpense)
-		expenseRoutes.DELETE("/:expenseID", handler.DeleteExpense)
-	}
-}
-
 func (h *ExpenseHandler) AddExpense(c *gin.Context) {
 	userID := c.Param("id")
 	if strings.TrimSpace(userID) == "" {
