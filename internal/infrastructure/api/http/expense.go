@@ -155,5 +155,5 @@ func (h *ExpenseHandler) DeleteExpense(c *gin.Context) {
 		return
 	}
 
-	response.SuccessWithStatusResponse(c, http.StatusNoContent, "Expense deleted successfully", nil)
+	response.SuccessResponse(c, "Expense deleted successfully", gin.H{"user_id": userID, "income_id": expenseID})
 }

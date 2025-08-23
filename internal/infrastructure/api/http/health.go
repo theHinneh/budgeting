@@ -37,9 +37,9 @@ func (repo *HealthHandler) HealthCheck(ctx *gin.Context) {
 	healthData["environment"] = env
 
 	if repo.firestoreClient != nil {
-		// Perform a simple Firestore operation to check connectivity
-		_, err := repo.firestoreClient.Collection("health_check").Doc("status").Get(ctx.Request.Context())
-		if err != nil && err.Error() != "rpc error: code = NotFound desc = document not found: projects/budgeting-bb0f5/databases/(default)/documents/health_check/status" {
+		healthDocRef := repo.firestoreClient.Collection("health_check").Doc("status")
+		_, err := healthDocRef.Set(ctx.Request.Context(), map[string]interface{}{"last_checked": time.Now().UTC()})
+		if err != nil {
 			healthData["database"] = gin.H{
 				"status":  "unhealthy",
 				"details": err.Error(),
