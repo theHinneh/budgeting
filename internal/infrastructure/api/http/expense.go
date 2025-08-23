@@ -43,11 +43,14 @@ func (h *ExpenseHandler) AddExpense(c *gin.Context) {
 	}
 
 	input := ports.AddExpenseInput{
-		UserID:   userID,
-		Source:   req.ToDomain().Source,
-		Amount:   req.ToDomain().Amount,
-		Currency: req.ToDomain().Currency,
-		Notes:    req.ToDomain().Notes,
+		UserID:              userID,
+		Source:              req.ToDomain().Source,
+		Amount:              req.ToDomain().Amount,
+		Currency:            req.ToDomain().Currency,
+		Notes:               req.ToDomain().Notes,
+		IsRecurring:         req.ToDomain().IsRecurring,
+		RecurrenceFrequency: req.ToDomain().RecurrenceFrequency,
+		NextOccurrenceDate:  &req.ToDomain().NextOccurrenceDate,
 	}
 
 	expense, err := h.expenseService.AddExpense(c.Request.Context(), input)
@@ -120,10 +123,13 @@ func (h *ExpenseHandler) UpdateExpense(c *gin.Context) {
 	}
 
 	input := ports.AddExpenseInput{
-		Source:   req.ToDomain().Source,
-		Amount:   req.ToDomain().Amount,
-		Currency: req.ToDomain().Currency,
-		Notes:    req.ToDomain().Notes,
+		Source:              req.ToDomain().Source,
+		Amount:              req.ToDomain().Amount,
+		Currency:            req.ToDomain().Currency,
+		Notes:               req.ToDomain().Notes,
+		IsRecurring:         req.ToDomain().IsRecurring,
+		RecurrenceFrequency: req.ToDomain().RecurrenceFrequency,
+		NextOccurrenceDate:  &req.ToDomain().NextOccurrenceDate,
 	}
 
 	expense, err := h.expenseService.UpdateExpense(c.Request.Context(), userID, expenseID, input)

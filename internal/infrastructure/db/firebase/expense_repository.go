@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"errors"
 
@@ -23,14 +24,17 @@ func (f *ExpenseRepository) CreateExpense(ctx context.Context, expense *domain.E
 		return nil, fmt.Errorf("invalid expense")
 	}
 	_, err := f.Firestore.Collection("expenses").Doc(expense.UserID).Collection("expenses").Doc(expense.UID).Set(ctx, map[string]interface{}{
-		"UID":       expense.UID,
-		"UserID":    expense.UserID,
-		"Source":    expense.Source,
-		"Amount":    expense.Amount,
-		"Currency":  expense.Currency,
-		"Notes":     expense.Notes,
-		"CreatedAt": expense.CreatedAt,
-		"UpdatedAt": expense.UpdatedAt,
+		"UID":                 expense.UID,
+		"UserID":              expense.UserID,
+		"Source":              expense.Source,
+		"Amount":              expense.Amount,
+		"Currency":            expense.Currency,
+		"Notes":               expense.Notes,
+		"IsRecurring":         expense.IsRecurring,
+		"RecurrenceFrequency": expense.RecurrenceFrequency,
+		"NextOccurrenceDate":  expense.NextOccurrenceDate,
+		"CreatedAt":           expense.CreatedAt,
+		"UpdatedAt":           expense.UpdatedAt,
 	})
 	if err != nil {
 		return nil, err
@@ -75,14 +79,17 @@ func (f *ExpenseRepository) UpdateExpense(ctx context.Context, expense *domain.E
 		return nil, fmt.Errorf("invalid expense")
 	}
 	_, err := f.Firestore.Collection("expenses").Doc(expense.UserID).Collection("expenses").Doc(expense.UID).Set(ctx, map[string]interface{}{
-		"UID":       expense.UID,
-		"UserID":    expense.UserID,
-		"Source":    expense.Source,
-		"Amount":    expense.Amount,
-		"Currency":  expense.Currency,
-		"Notes":     expense.Notes,
-		"CreatedAt": expense.CreatedAt,
-		"UpdatedAt": expense.UpdatedAt,
+		"UID":                 expense.UID,
+		"UserID":              expense.UserID,
+		"Source":              expense.Source,
+		"Amount":              expense.Amount,
+		"Currency":            expense.Currency,
+		"Notes":               expense.Notes,
+		"IsRecurring":         expense.IsRecurring,
+		"RecurrenceFrequency": expense.RecurrenceFrequency,
+		"NextOccurrenceDate":  expense.NextOccurrenceDate,
+		"CreatedAt":           expense.CreatedAt,
+		"UpdatedAt":           expense.UpdatedAt,
 	})
 	if err != nil {
 		return nil, err
@@ -101,5 +108,33 @@ func (f *ExpenseRepository) DeleteExpense(ctx context.Context, userID string, ex
 	}
 
 	_, err = docRef.Delete(ctx)
+	return err
+}
+
+func (f *ExpenseRepository) ListRecurringExpenses(ctx context.Context, userID string, before time.Time) ([]*domain.Expense, error) {
+	var res []*domain.Expense
+	iter := f.Firestore.Collection("expenses").Doc(userID).Collection("expenses").Where("IsRecurring", "==", true).Where("NextOccurrenceDate", "<=", before).Documents(ctx)
+	for {
+		dsnap, err := iter.Next()
+		if err != nil {
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			return nil, err
+		}
+		var m domain.Expense
+		if err := dsnap.DataTo(&m); err != nil {
+			return nil, err
+		}
+		res = append(res, &m)
+	}
+	return res, nil
+}
+
+func (f *ExpenseRepository) UpdateExpenseRecurringStatus(ctx context.Context, userID string, expenseID string, nextOccurrenceDate time.Time) error {
+	_, err := f.Firestore.Collection("expenses").Doc(userID).Collection("expenses").Doc(expenseID).Update(ctx, []firestore.Update{
+		{Path: "NextOccurrenceDate", Value: nextOccurrenceDate},
+		{Path: "UpdatedAt", Value: time.Now().UTC()},
+	})
 	return err
 }

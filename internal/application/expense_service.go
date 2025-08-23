@@ -32,15 +32,22 @@ func (s *ExpenseService) AddExpense(ctx context.Context, in ports.AddExpenseInpu
 	}
 
 	expense := &domain.Expense{
-		UID:       uuid.NewString(),
-		UserID:    userID,
-		Source:    source,
-		Amount:    in.Amount,
-		Currency:  currency,
-		Notes:     strings.TrimSpace(in.Notes),
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
+		UID:                 uuid.NewString(),
+		UserID:              userID,
+		Source:              source,
+		Amount:              in.Amount,
+		Currency:            currency,
+		Notes:               strings.TrimSpace(in.Notes),
+		IsRecurring:         in.IsRecurring,
+		RecurrenceFrequency: strings.TrimSpace(in.RecurrenceFrequency),
+		CreatedAt:           time.Now().UTC(),
+		UpdatedAt:           time.Now().UTC(),
 	}
+
+	if in.NextOccurrenceDate != nil {
+		expense.NextOccurrenceDate = *in.NextOccurrenceDate
+	}
+
 	return s.repo.CreateExpense(ctx, expense)
 }
 
@@ -74,17 +81,22 @@ func (s *ExpenseService) UpdateExpense(ctx context.Context, userID string, expen
 		currency = "USD"
 	}
 
-	// Get existing expense
 	expense, err := s.repo.GetExpense(ctx, userID, expenseID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update fields
 	expense.Source = source
 	expense.Amount = in.Amount
 	expense.Currency = currency
 	expense.Notes = strings.TrimSpace(in.Notes)
+	expense.IsRecurring = in.IsRecurring
+	expense.RecurrenceFrequency = strings.TrimSpace(in.RecurrenceFrequency)
+
+	if in.NextOccurrenceDate != nil {
+		expense.NextOccurrenceDate = *in.NextOccurrenceDate
+	}
+
 	expense.UpdatedAt = time.Now().UTC()
 
 	return s.repo.UpdateExpense(ctx, expense)
@@ -97,4 +109,74 @@ func (s *ExpenseService) DeleteExpense(ctx context.Context, userID string, expen
 		return ErrValidation
 	}
 	return s.repo.DeleteExpense(ctx, userID, expenseID)
+}
+
+func (s *ExpenseService) ProcessDueExpenses(ctx context.Context, userID string, now time.Time) (int, error) {
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return 0, ErrValidation
+	}
+
+	expenses, err := s.repo.ListRecurringExpenses(ctx, userID, now)
+	if err != nil {
+		return 0, err
+	}
+
+	count := 0
+	for _, exp := range expenses {
+		if exp == nil || !exp.IsRecurring {
+			continue
+		}
+
+		next := exp.NextOccurrenceDate.UTC()
+
+		normalizedNext := time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, time.UTC)
+		normalizedNow := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
+		if normalizedNext.Equal(normalizedNow) {
+			_, err := s.repo.CreateExpense(ctx, &domain.Expense{
+				UID:       uuid.NewString(),
+				UserID:    userID,
+				Source:    exp.Source,
+				Amount:    exp.Amount,
+				Currency:  exp.Currency,
+				Notes:     exp.Notes,
+				CreatedAt: time.Now().UTC(),
+				UpdatedAt: time.Now().UTC(),
+			})
+			if err != nil {
+				return count, err
+			}
+			count++
+			next = advanceExpenseNextOccurrence(next, exp.RecurrenceFrequency)
+		}
+
+		_ = s.repo.UpdateExpenseRecurringStatus(ctx, userID, exp.UID, next)
+	}
+
+	return count, nil
+}
+
+func isValidExpenseFrequency(freq string) bool {
+	switch freq {
+	case string(ports.RecurringWeekly), string(ports.RecurringBiWeekly), string(ports.RecurringMonthly), string(ports.RecurringAnnually):
+		return true
+	default:
+		return false
+	}
+}
+
+func advanceExpenseNextOccurrence(from time.Time, freq string) time.Time {
+	switch freq {
+	case string(ports.RecurringWeekly):
+		return from.AddDate(0, 0, 7)
+	case string(ports.RecurringBiWeekly):
+		return from.AddDate(0, 0, 14)
+	case string(ports.RecurringMonthly):
+		return from.AddDate(0, 1, 0)
+	case string(ports.RecurringAnnually):
+		return from.AddDate(1, 0, 0)
+	default:
+		return from.AddDate(0, 0, 7)
+	}
 }
