@@ -13,7 +13,6 @@ type CreateUserInput struct {
 	FirstName   string
 	LastName    string
 	PhoneNumber *string
-	Password    string
 }
 
 type UpdateUserInput struct {

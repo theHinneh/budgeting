@@ -22,40 +22,18 @@ var _ ports.UserServicePort = (*UserService)(nil)
 
 func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) (string, error) {
 	// Basic validation
-	if strings.TrimSpace(in.Username) == "" || strings.TrimSpace(in.Email) == "" || strings.TrimSpace(in.FirstName) == "" || strings.TrimSpace(in.LastName) == "" {
+	if strings.TrimSpace(in.Username) == "" || strings.TrimSpace(in.Email) == "" || strings.TrimSpace(in.FirstName) == "" || strings.TrimSpace(in.LastName) == "" || strings.TrimSpace(in.UID) == "" {
 		return "", ErrValidation
 	}
 
-	var uid string
-	password := strings.TrimSpace(in.Password)
-	var err error
-	if password != "" {
-		// Create auth user
-		display := strings.TrimSpace(strings.TrimSpace(in.FirstName + " " + in.LastName))
-		u, authErr := s.authenticator.CreateAuthUser(ctx, in.Email, password, display, in.PhoneNumber)
-		if authErr != nil {
-			return "", authErr
-		}
-		uid = u
-	} else {
-		uid = strings.TrimSpace(in.UID)
-		if uid == "" {
-			return "", ErrValidation
-		}
-		// Verify auth user exists
-		if authErr := s.authenticator.GetAuthUser(ctx, uid); authErr != nil {
-			return "", authErr
-		}
-	}
-
 	// Build and store profile
-	user := domain.NewUser(uid, in.Username, in.Email, in.FirstName, in.LastName, in.PhoneNumber)
+	user := domain.NewUser(in.UID, in.Username, in.Email, in.FirstName, in.LastName, in.PhoneNumber)
 
-	_, err = s.userRepo.CreateUser(ctx, user)
+	_, err := s.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		return "", err
 	}
-	return uid, nil
+	return in.UID, nil
 }
 
 func (s *UserService) GetUser(ctx context.Context, uid string) (*domain.User, error) {

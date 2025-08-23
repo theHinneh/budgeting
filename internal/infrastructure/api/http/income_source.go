@@ -8,38 +8,54 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/dtos"
+	"github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
+	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	"github.com/theHinneh/budgeting/internal/infrastructure/response"
 )
 
 type IncomeSourceHandler struct {
 	Service ports.IncomeServicePort
+	cfg     *config.Configuration
 }
 
-func NewIncomeSourceHandler(svc ports.IncomeServicePort) *IncomeSourceHandler {
-	if svc == nil {
+func NewIncomeSourceHandler(svc ports.IncomeServicePort, cfg *config.Configuration) *IncomeSourceHandler {
+	if svc == nil || cfg == nil {
 		return nil
 	}
-	return &IncomeSourceHandler{Service: svc}
+	return &IncomeSourceHandler{Service: svc, cfg: cfg}
 }
 
 func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
-	userID := strings.TrimSpace(c.Param("id"))
+	requestedUserID := strings.TrimSpace(c.Param("id"))
 	//layout := "2006-12-31"
 
-	if userID == "" {
-		response.ErrorResponse(c, "missing user id", nil)
+	if requestedUserID == "" {
+		response.ErrorResponse(c, "missing user id", nil, h.cfg.IsDevelopment())
 		return
 	}
+
+	authUID, exists := c.Get(middleware.FirebaseUIDKey)
+	if !exists {
+		response.ErrorResponse(c, "authenticated user ID not found in context", nil, h.cfg.IsDevelopment())
+		return
+	}
+
+	if requestedUserID != authUID.(string) {
+		response.ErrorResponse(c, "unauthorized access to add income source", nil, h.cfg.IsDevelopment())
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	var req dtos.AddIncomeSourceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ErrorResponse(c, "invalid request body", err)
+		response.ErrorResponse(c, "invalid request body", err, h.cfg.IsDevelopment())
 		return
 	}
 
 	//parsedTime, err := time.Parse(layout, req.NextPayAt)
 
 	src, err := h.Service.AddIncomeSource(c.Request.Context(), ports.AddIncomeSourceInput{
-		UserID:    userID,
+		UserID:    requestedUserID,
 		Source:    req.Source,
 		Amount:    req.Amount,
 		Currency:  req.Currency,
@@ -48,41 +64,66 @@ func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 		Notes:     req.Notes,
 	})
 	if err != nil {
-		response.ErrorResponse(c, "failed to add income source", err)
+		response.ErrorResponse(c, "failed to add income source", err, h.cfg.IsDevelopment())
 		return
 	}
 	response.SuccessWithStatusResponse(c, http.StatusCreated, "income source created", src)
 }
 
 func (h *IncomeSourceHandler) ListIncomeSources(c *gin.Context) {
-	userID := strings.TrimSpace(c.Param("id"))
-	if userID == "" {
-		response.ErrorResponse(c, "missing user id", nil)
+	requestedUserID := strings.TrimSpace(c.Param("id"))
+	if requestedUserID == "" {
+		response.ErrorResponse(c, "missing user id", nil, h.cfg.IsDevelopment())
 		return
 	}
-	sources, err := h.Service.ListIncomeSources(c.Request.Context(), userID)
+
+	authUID, exists := c.Get(middleware.FirebaseUIDKey)
+	if !exists {
+		response.ErrorResponse(c, "authenticated user ID not found in context", nil, h.cfg.IsDevelopment())
+		return
+	}
+
+	if requestedUserID != authUID.(string) {
+		response.ErrorResponse(c, "unauthorized access to list income sources", nil, h.cfg.IsDevelopment())
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	sources, err := h.Service.ListIncomeSources(c.Request.Context(), requestedUserID)
 	if err != nil {
-		response.ErrorResponse(c, "failed to list income sources", err)
+		response.ErrorResponse(c, "failed to list income sources", err, h.cfg.IsDevelopment())
 		return
 	}
 
 	if len(sources) == 0 {
-		response.ErrorResponse(c, "no income sources found", nil)
+		response.ErrorResponse(c, "no income sources found", nil, h.cfg.IsDevelopment())
 		return
 	}
 	response.SuccessResponseData(c, sources)
 }
 
 func (h *IncomeSourceHandler) ProcessDueIncomes(c *gin.Context) {
-	userID := strings.TrimSpace(c.Param("id"))
-	if userID == "" {
-		response.ErrorResponse(c, "missing user id", nil)
+	requestedUserID := strings.TrimSpace(c.Param("id"))
+	if requestedUserID == "" {
+		response.ErrorResponse(c, "missing user id", nil, h.cfg.IsDevelopment())
 		return
 	}
-	// optional override time? For now, use server time
-	count, err := h.Service.ProcessDueIncomes(c.Request.Context(), userID, time.Now())
+
+	authUID, exists := c.Get(middleware.FirebaseUIDKey)
+	if !exists {
+		response.ErrorResponse(c, "authenticated user ID not found in context", nil, h.cfg.IsDevelopment())
+		return
+	}
+
+	if requestedUserID != authUID.(string) {
+		response.ErrorResponse(c, "unauthorized access to process due incomes", nil, h.cfg.IsDevelopment())
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	count, err := h.Service.ProcessDueIncomes(c.Request.Context(), requestedUserID, time.Now())
 	if err != nil {
-		response.ErrorResponse(c, "failed to process due incomes", err)
+		response.ErrorResponse(c, "failed to process due incomes", err, h.cfg.IsDevelopment())
 		return
 	}
 	response.SuccessResponse(c, "processed due incomes", gin.H{"created": count})

@@ -19,12 +19,12 @@ import (
 )
 
 func main() {
-	logger.InitZaplogger()
-
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Fatal("Failed to load configuration", zap.Error(err))
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
+
+	logger.InitZaplogger(cfg)
 
 	dbConfig := cfg.GetDatabaseConfig()
 
@@ -66,19 +66,17 @@ func main() {
 		fbInstance.ExpenseRepository,
 	)
 
-	routes := api_http.NewRouter(healthHandler, userService, incomeService, expenseService, netWorthService)
+	router := api_http.NewRouter(healthHandler, userService, incomeService, expenseService, netWorthService, fbInstance.App, cfg)
 
-	port := cfg.V.GetString("SERVER_PORT")
-	if port == "" {
-		port = cfg.V.GetString("server.port")
-	}
+	serverConfig := cfg.GetServerConfig()
+	port := serverConfig.Port
 	if port == "" {
 		port = "8080"
 	}
 
 	srv := &http.Server{
 		Addr:    ":" + port,
-		Handler: routes,
+		Handler: router,
 	}
 
 	go func() {

@@ -16,7 +16,8 @@ const (
 )
 
 type ServerConfig struct {
-	Port string
+	Port       string
+	CORSOrigin string
 }
 
 type DatabaseConfig struct {
@@ -42,14 +43,12 @@ type Configuration struct {
 	V *viper.Viper
 }
 
-// LoadEnv loads environment variables from a .env file if it exists
 func LoadEnv() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, relying on environment variables")
 	}
 }
 
-// Load reads configuration from the config file and environment variables
 func Load() (*Configuration, error) {
 	LoadEnv()
 
@@ -71,8 +70,25 @@ func Load() (*Configuration, error) {
 	return &Configuration{V: v}, nil
 }
 
-// GetDatabaseConfig extracts database configuration. It supports both ENV-style keys
-// (e.g., DB_DRIVER) and YAML nested keys (e.g., database.driver) as fallbacks.
+func (c *Configuration) GetServerConfig() ServerConfig {
+	getStr := func(primary string, fallbacks ...string) string {
+		if v := c.V.GetString(primary); v != "" {
+			return v
+		}
+		for _, fb := range fallbacks {
+			if v := c.V.GetString(fb); v != "" {
+				return v
+			}
+		}
+		return ""
+	}
+
+	return ServerConfig{
+		Port:       getStr("SERVER_PORT", "server.port"),
+		CORSOrigin: getStr("CORS_ALLOW_ORIGIN", "server.cors_allow_origin"),
+	}
+}
+
 func (c *Configuration) GetDatabaseConfig() DatabaseConfig {
 	getStr := func(primary string, fallbacks ...string) string {
 		if v := c.V.GetString(primary); v != "" {
@@ -128,7 +144,22 @@ func (c *Configuration) GetDatabaseConfig() DatabaseConfig {
 	}
 }
 
-// GetPathToConfig returns the path of the config file in use
 func (c *Configuration) GetPathToConfig() string {
 	return c.V.ConfigFileUsed()
+}
+
+// GetAppEnv returns the application environment (e.g., "development", "production").
+func (c *Configuration) GetAppEnv() string {
+	env := c.V.GetString("APP_ENV")
+	if env == "" {
+		env = c.V.GetString("app_env")
+	}
+	if env == "" {
+		env = "development"
+	}
+	return env
+}
+
+func (c *Configuration) IsDevelopment() bool {
+	return c.GetAppEnv() == "development"
 }

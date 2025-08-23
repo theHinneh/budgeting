@@ -3,6 +3,7 @@ package logger
 import (
 	"log"
 
+	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -11,9 +12,14 @@ var (
 	zapLogger *zap.Logger
 )
 
-func InitZaplogger() {
-	// Create Zap logger
-	config := zap.NewProductionConfig()
+func InitZaplogger(cfg *config.Configuration) {
+	var config zap.Config
+	if cfg != nil && cfg.IsDevelopment() {
+		config = zap.NewDevelopmentConfig()
+	} else {
+		config = zap.NewProductionConfig()
+	}
+
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	var err error
 	zapLogger, err = config.Build()

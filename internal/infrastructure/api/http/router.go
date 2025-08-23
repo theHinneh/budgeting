@@ -3,34 +3,42 @@ package http
 import (
 	"time"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	middleware2 "github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
+	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 )
 
-// NewRouter initializes the Gin engine, applies middleware, and registers all routes.
-func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort, expenseService ports.ExpenseServicePort, netWorthService ports.NetWorthServicePort) *gin.Engine {
+func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort, expenseService ports.ExpenseServicePort, netWorthService ports.NetWorthServicePort, firebaseApp *firebase.App, cfg *config.Configuration) *gin.Engine {
 	router := gin.Default()
 
-	router.Use(middleware2.CORS())
+	serverConfig := cfg.GetServerConfig()
+	router.Use(middleware2.CORS(serverConfig.CORSOrigin))
 	router.Use(middleware2.RateLimit(60, time.Minute))
 
 	registerHealthRoutes(router, healthHandler)
 
 	v1 := router.Group("/v1")
 	{
-		userHandler := NewUserHandler(userService)
+		v1.Use(middleware2.FirebaseAuthentication(firebaseApp, cfg))
+		userHandler := NewUserHandler(userService, firebaseApp, cfg)
+
+		publicV1 := router.Group("/v1")
+		{
+			publicV1.POST("/users", userHandler.CreateUser)
+			publicV1.POST("/auth/forgot-password", userHandler.ForgotPassword)
+		}
+
 		userRoutes := v1.Group("/users")
 		{
-			userRoutes.POST("", userHandler.CreateUser)
 			userRoutes.GET("/:id", userHandler.GetUser)
 			userRoutes.PUT("/:id", userHandler.UpdateUser)
 			userRoutes.DELETE("/:id", userHandler.DeleteUser)
 			userRoutes.POST("/:id/password", userHandler.ChangePassword)
 		}
-		v1.POST("/auth/forgot-password", userHandler.ForgotPassword)
 
-		incomeHandler := NewIncomeHandler(incomeService)
+		incomeHandler := NewIncomeHandler(incomeService, cfg)
 		incomeRoutes := v1.Group("/users/:id/incomes")
 		{
 			incomeRoutes.POST("", incomeHandler.AddIncome)
@@ -38,7 +46,7 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 			incomeRoutes.DELETE(":incomeId", incomeHandler.DeleteIncome)
 		}
 
-		incomeSourceHandler := NewIncomeSourceHandler(incomeService)
+		incomeSourceHandler := NewIncomeSourceHandler(incomeService, cfg)
 		incomeSourceRoutes := v1.Group("/users/:id")
 		{
 			incomeSourceRoutes.POST("/income-sources", incomeSourceHandler.AddIncomeSource)
@@ -46,7 +54,7 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 			incomeSourceRoutes.POST("/incomes/process-due", incomeSourceHandler.ProcessDueIncomes)
 		}
 
-		expenseHandler := NewExpenseHandler(expenseService)
+		expenseHandler := NewExpenseHandler(expenseService, cfg)
 		expenseRoutes := v1.Group("/users/:id/expenses")
 		{
 			expenseRoutes.POST("", expenseHandler.AddExpense)
@@ -56,8 +64,11 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 			expenseRoutes.DELETE("/:expenseID", expenseHandler.DeleteExpense)
 		}
 
-		netWorthHandler := NewNetWorthHandler(netWorthService)
-		v1.GET("/users/:id/net-worth", netWorthHandler.GetNetWorth)
+		netWorthHandler := NewNetWorthHandler(netWorthService, cfg)
+		netWorthRoutes := v1.Group("/users/:id/net-worth")
+		{
+			netWorthRoutes.GET("", netWorthHandler.GetNetWorth)
+		}
 	}
 
 	return router

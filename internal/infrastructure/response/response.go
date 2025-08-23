@@ -8,13 +8,13 @@ import (
 )
 
 // ErrorResponse Error Response
-func ErrorResponse(ctx *gin.Context, message string, reason error) {
+func ErrorResponse(ctx *gin.Context, message string, reason error, isDevelopment bool) {
 	response := gin.H{
 		"status":  "error",
 		"message": message,
 	}
 
-	if reason != nil {
+	if reason != nil && isDevelopment {
 		response["reason"] = reason.Error()
 	}
 
@@ -83,13 +83,13 @@ func TeapotResponse(ctx *gin.Context, data any) {
 }
 
 // FailedResponse Failed Response
-func FailedResponse(ctx *gin.Context, message string, reason error) {
+func FailedResponse(ctx *gin.Context, message string, reason error, isDevelopment bool) {
 	response := gin.H{
 		"status":  "failed",
 		"message": message,
 	}
 
-	if reason != nil {
+	if reason != nil && isDevelopment {
 		response["reason"] = reason.Error()
 	}
 
@@ -105,27 +105,27 @@ func FailedResponseGeneric(ctx *gin.Context) {
 }
 
 // NotFoundResponse NotFound Response
-func NotFoundResponse(ctx *gin.Context, message string, reason error) {
+func NotFoundResponse(ctx *gin.Context, message string, reason error, isDevelopment bool) {
 	response := gin.H{
 		"status":  "not found",
 		"message": message,
 	}
 
-	if reason != nil {
+	if reason != nil && isDevelopment {
 		response["reason"] = reason.Error()
 	}
 	ctx.JSON(http.StatusNotFound, response)
 }
 
 // UnauthorizedResponse Unauthorized Response
-func UnauthorizedResponse(ctx *gin.Context, message string, reason error) {
+func UnauthorizedResponse(ctx *gin.Context, message string, reason error, isDevelopment bool) {
 
 	response := gin.H{
 		"status":  "unauthorized",
 		"message": message,
 	}
 
-	if reason != nil {
+	if reason != nil && isDevelopment {
 		response["reason"] = reason.Error()
 	}
 
@@ -133,25 +133,25 @@ func UnauthorizedResponse(ctx *gin.Context, message string, reason error) {
 }
 
 // ForbiddenResponse Forbidden Response
-func ForbiddenResponse(ctx *gin.Context, message string, reason error) {
+func ForbiddenResponse(ctx *gin.Context, message string, reason error, isDevelopment bool) {
 	response := gin.H{
 		"status":  "forbidden",
 		"message": message,
 	}
 
-	if reason != nil {
+	if reason != nil && isDevelopment {
 		response["reason"] = reason.Error()
 	}
 
 	ctx.JSON(http.StatusForbidden, response)
 }
 
-func LockedResponse(ctx *gin.Context, message string, reason error) {
+func LockedResponse(ctx *gin.Context, message string, reason error, isDevelopment bool) {
 	response := gin.H{
 		"status":  "locked",
 		"message": message,
 	}
-	if reason != nil {
+	if reason != nil && isDevelopment {
 		response["reason"] = reason.Error()
 	}
 	ctx.JSON(http.StatusLocked, response)

@@ -13,7 +13,7 @@ import (
 )
 
 type Database struct {
-	app             *fb.App
+	App             *fb.App
 	FirestoreClient *firestore.Client
 	AuthClient      *fbAuth.Client
 
@@ -68,7 +68,7 @@ func NewDatabase(ctx context.Context, cfg *config.Configuration) (*Database, err
 	}
 
 	return &Database{
-		app:                    app,
+		App:                    app,
 		FirestoreClient:        fsClient,
 		AuthClient:             authClient,
 		UserRepository:         &UserRepository{Firestore: fsClient},
