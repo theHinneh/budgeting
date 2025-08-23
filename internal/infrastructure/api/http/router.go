@@ -9,7 +9,7 @@ import (
 )
 
 // NewRouter initializes the Gin engine, applies middleware, and registers all routes.
-func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort, expenseService ports.ExpenseServicePort) *gin.Engine {
+func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort, expenseService ports.ExpenseServicePort, netWorthService ports.NetWorthServicePort) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(middleware2.CORS())
@@ -55,6 +55,9 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 			expenseRoutes.PUT("/:expenseID", expenseHandler.UpdateExpense)
 			expenseRoutes.DELETE("/:expenseID", expenseHandler.DeleteExpense)
 		}
+
+		netWorthHandler := NewNetWorthHandler(netWorthService)
+		v1.GET("/users/:id/net-worth", netWorthHandler.GetNetWorth)
 	}
 
 	return router

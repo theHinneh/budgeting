@@ -61,8 +61,12 @@ func main() {
 	expenseService := application.NewExpenseService(
 		fbInstance.ExpenseRepository,
 	)
+	netWorthService := application.NewNetWorthService(
+		fbInstance.IncomeRepository,
+		fbInstance.ExpenseRepository,
+	)
 
-	routes := api_http.NewRouter(healthHandler, userService, incomeService, expenseService)
+	routes := api_http.NewRouter(healthHandler, userService, incomeService, expenseService, netWorthService)
 
 	port := cfg.V.GetString("SERVER_PORT")
 	if port == "" {
