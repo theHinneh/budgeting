@@ -14,6 +14,7 @@ import (
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	fbdb "github.com/theHinneh/budgeting/internal/infrastructure/db/firebase"
 	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
+	"github.com/theHinneh/budgeting/internal/worker"
 	"go.uber.org/zap"
 )
 
@@ -82,6 +83,10 @@ func main() {
 			logger.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
+
+	// Start background workers
+	worker.StartRecurringExpenseProcessor(expenseService, fbInstance.UserRepository)
+	worker.StartRecurringIncomeProcessor(incomeService, fbInstance.UserRepository)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

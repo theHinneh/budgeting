@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"errors"
+
 	"cloud.google.com/go/firestore"
 	"github.com/theHinneh/budgeting/internal/domain"
+	"google.golang.org/api/iterator"
 )
 
 type UserRepository struct {
@@ -87,4 +90,20 @@ func (f *UserRepository) UpdateUser(ctx context.Context, u *domain.User) (*domai
 func (f *UserRepository) DeleteUser(ctx context.Context, uid string) error {
 	_, err := f.Firestore.Collection("users").Doc(uid).Delete(ctx)
 	return err
+}
+
+func (f *UserRepository) ListAllUserIDs(ctx context.Context) ([]string, error) {
+	var userIDs []string
+	iter := f.Firestore.Collection("users").Documents(ctx)
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			return nil, err
+		}
+		userIDs = append(userIDs, doc.Ref.ID)
+	}
+	return userIDs, nil
 }

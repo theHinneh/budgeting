@@ -55,6 +55,7 @@ type UserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
 	DeleteUser(ctx context.Context, uid string) error
+	ListAllUserIDs(ctx context.Context) ([]string, error)
 }
 
 type UserAuthenticator interface {
