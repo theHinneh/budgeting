@@ -10,6 +10,8 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/theHinneh/budgeting/internal/domain"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type ExpenseRepository struct {
@@ -89,6 +91,15 @@ func (f *ExpenseRepository) UpdateExpense(ctx context.Context, expense *domain.E
 }
 
 func (f *ExpenseRepository) DeleteExpense(ctx context.Context, userID string, expenseID string) error {
-	_, err := f.Firestore.Collection("expenses").Doc(userID).Collection("expenses").Doc(expenseID).Delete(ctx)
+	docRef := f.Firestore.Collection("expenses").Doc(userID).Collection("expenses").Doc(expenseID)
+	_, err := docRef.Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return status.Errorf(codes.NotFound, "expense not found")
+		}
+		return err
+	}
+
+	_, err = docRef.Delete(ctx)
 	return err
 }
