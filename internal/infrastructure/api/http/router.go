@@ -21,7 +21,7 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 
 	v1 := router.Group("/v1")
 	{
-		v1.Use(middleware2.FirebaseAuthentication(firebaseApp, cfg))
+		//v1.Use(middleware2.FirebaseAuthentication(firebaseApp, cfg))
 		userHandler := NewUserHandler(userService, firebaseApp, cfg)
 
 		publicV1 := router.Group("/v1")
