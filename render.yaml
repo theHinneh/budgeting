@@ -1,5 +1,0 @@
-services:
-  - type: web
-    name: budgeting
-    runtime: docker
-    plan: free
