@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: budgeting
+    env: go
+    runtime: go1.25 # ✅ force Render to use Go 1.25
+    buildCommand: go build -tags netgo -ldflags="-s -w" -o app cmd/server/main.go
+    startCommand: ./app
+    plan: free
