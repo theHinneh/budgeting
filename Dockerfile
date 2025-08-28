@@ -19,7 +19,9 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=build /src/app .
 
+ENV FIREBASE_CREDENTIALS_FILE=/app/the-hinneh-budget-firebase-adminsdk-fbsvc-e977e673df.json
+
 # Expose port (default is 10000 on Render)
 EXPOSE 10000
 
-CMD ["./app"]
+CMD sh -c 'echo "$FIREBASE_CREDENTIALS_JSON" > $FIREBASE_CREDENTIALS_FILE && ./app'
