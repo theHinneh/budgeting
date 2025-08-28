@@ -66,7 +66,13 @@ func main() {
 		fbInstance.ExpenseRepository,
 	)
 
-	router := api_http.NewRouter(healthHandler, userService, incomeService, expenseService, netWorthService, fbInstance.App, cfg)
+	// Create authentication service
+	authService := application.NewAuthService(
+		fbInstance.RefreshTokenRepository,
+		fbInstance.UserAuthenticator,
+	)
+
+	router := api_http.NewRouter(healthHandler, userService, incomeService, expenseService, netWorthService, fbInstance.App, authService, cfg)
 
 	serverConfig := cfg.GetServerConfig()
 	port := serverConfig.Port
@@ -89,6 +95,7 @@ func main() {
 	// Start background workers
 	worker.StartRecurringExpenseProcessor(expenseService, fbInstance.UserRepository)
 	worker.StartRecurringIncomeProcessor(incomeService, fbInstance.UserRepository)
+	worker.StartTokenCleanupWorker(authService)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

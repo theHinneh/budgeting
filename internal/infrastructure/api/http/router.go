@@ -5,12 +5,13 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
+	"github.com/theHinneh/budgeting/internal/application"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	middleware2 "github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 )
 
-func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort, expenseService ports.ExpenseServicePort, netWorthService ports.NetWorthServicePort, firebaseApp *firebase.App, cfg *config.Configuration) *gin.Engine {
+func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort, expenseService ports.ExpenseServicePort, netWorthService ports.NetWorthServicePort, firebaseApp *firebase.App, authService *application.AuthService, cfg *config.Configuration) *gin.Engine {
 	router := gin.Default()
 
 	serverConfig := cfg.GetServerConfig()
@@ -19,16 +20,20 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 
 	registerHealthRoutes(router, healthHandler)
 
-	v1 := router.Group("/v1")
-	{
-		//v1.Use(middleware2.FirebaseAuthentication(firebaseApp, cfg))
-		userHandler := NewUserHandler(userService, firebaseApp, cfg)
+	userHandler := NewUserHandler(userService, firebaseApp, cfg)
+	authHandler := NewAuthHandler(firebaseApp, authService, cfg)
 
-		publicV1 := router.Group("/v1")
-		{
-			publicV1.POST("/users", userHandler.CreateUser)
-			publicV1.POST("/auth/forgot-password", userHandler.ForgotPassword)
-		}
+	publicV1 := router.Group("/v1")
+	{
+		publicV1.POST("/users", userHandler.CreateUser)
+		publicV1.POST("/auth/login", authHandler.Login)
+		publicV1.POST("/auth/refresh", authHandler.RefreshToken)
+		publicV1.POST("/auth/forgot-password", userHandler.ForgotPassword)
+	}
+
+	v1 := router.Group("/v1")
+	v1.Use(middleware2.FirebaseAuthentication(firebaseApp, cfg))
+	{
 
 		userRoutes := v1.Group("/users")
 		{
@@ -36,6 +41,15 @@ func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, 
 			userRoutes.PUT("/:id", userHandler.UpdateUser)
 			userRoutes.DELETE("/:id", userHandler.DeleteUser)
 			userRoutes.POST("/:id/password", userHandler.ChangePassword)
+		}
+
+		authRoutes := v1.Group("/auth")
+		{
+			authRoutes.POST("/logout", authHandler.Logout)
+			authRoutes.GET("/me", authHandler.GetCurrentUser)
+			authRoutes.GET("/sessions", authHandler.GetUserSessions)
+			authRoutes.POST("/sessions/revoke", authHandler.RevokeSession)
+			authRoutes.POST("/sessions/revoke-all", authHandler.RevokeAllSessions)
 		}
 
 		incomeHandler := NewIncomeHandler(incomeService, cfg)

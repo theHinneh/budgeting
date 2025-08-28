@@ -22,6 +22,7 @@ type Database struct {
 	IncomeRepository       *IncomeRepository
 	ExpenseRepository      *ExpenseRepository
 	IncomeSourceRepository *IncomeRepository
+	RefreshTokenRepository *RefreshTokenRepository
 }
 
 func NewDatabase(ctx context.Context, cfg *config.Configuration) (*Database, error) {
@@ -76,6 +77,7 @@ func NewDatabase(ctx context.Context, cfg *config.Configuration) (*Database, err
 		ExpenseRepository:      &ExpenseRepository{Firestore: fsClient},
 		IncomeRepository:       &IncomeRepository{Firestore: fsClient},
 		IncomeSourceRepository: &IncomeRepository{Firestore: fsClient},
+		RefreshTokenRepository: &RefreshTokenRepository{Firestore: fsClient},
 	}, nil
 }
 
