@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 )
 
@@ -18,7 +19,7 @@ func NewNetWorthService(incomeRepo ports.IncomeRepoPort, expenseRepo ports.Expen
 
 var _ ports.NetWorthServicePort = (*NetWorthService)(nil)
 
-func (s *NetWorthService) GetNetWorth(ctx context.Context, userID string) (*ports.NetWorthResponse, error) {
+func (s *NetWorthService) GetNetWorth(ctx context.Context, userID string) (*dto.NetWorthResponse, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return nil, ErrValidation
@@ -46,8 +47,6 @@ func (s *NetWorthService) GetNetWorth(ctx context.Context, userID string) (*port
 
 	netWorth := totalIncome - totalExpense
 
-	// Assuming a single currency for simplicity for now. A more robust solution
-	// would handle multiple currencies or require a base currency for conversion.
 	currency := "USD"
 	if len(incomes) > 0 {
 		currency = incomes[0].Currency
@@ -55,7 +54,7 @@ func (s *NetWorthService) GetNetWorth(ctx context.Context, userID string) (*port
 		currency = expenses[0].Currency
 	}
 
-	return &ports.NetWorthResponse{
+	return &dto.NetWorthResponse{
 		TotalIncome:  totalIncome,
 		TotalExpense: totalExpense,
 		NetWorth:     netWorth,

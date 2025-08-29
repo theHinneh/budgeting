@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/domain"
 )
@@ -20,7 +21,7 @@ func NewExpenseService(repo ports.ExpenseRepoPort) *ExpenseService {
 
 var _ ports.ExpenseServicePort = (*ExpenseService)(nil)
 
-func (s *ExpenseService) AddExpense(ctx context.Context, in ports.AddExpenseInput) (*domain.Expense, error) {
+func (s *ExpenseService) AddExpense(ctx context.Context, in dto.AddExpenseInput) (*domain.Expense, error) {
 	userID := strings.TrimSpace(in.UserID)
 	source := strings.TrimSpace(in.Source)
 	currency := strings.TrimSpace(in.Currency)
@@ -68,7 +69,7 @@ func (s *ExpenseService) GetExpense(ctx context.Context, userID string, expenseI
 	return s.repo.GetExpense(ctx, userID, expenseID)
 }
 
-func (s *ExpenseService) UpdateExpense(ctx context.Context, userID string, expenseID string, in ports.AddExpenseInput) (*domain.Expense, error) {
+func (s *ExpenseService) UpdateExpense(ctx context.Context, userID string, expenseID string, in dto.AddExpenseInput) (*domain.Expense, error) {
 	userID = strings.TrimSpace(userID)
 	expenseID = strings.TrimSpace(expenseID)
 	source := strings.TrimSpace(in.Source)
@@ -159,7 +160,7 @@ func (s *ExpenseService) ProcessDueExpenses(ctx context.Context, userID string, 
 
 func isValidExpenseFrequency(freq string) bool {
 	switch freq {
-	case string(ports.RecurringWeekly), string(ports.RecurringBiWeekly), string(ports.RecurringMonthly), string(ports.RecurringAnnually):
+	case string(dto.RecurringWeekly), string(dto.RecurringBiWeekly), string(dto.RecurringMonthly), string(dto.RecurringAnnually):
 		return true
 	default:
 		return false
@@ -168,13 +169,13 @@ func isValidExpenseFrequency(freq string) bool {
 
 func advanceExpenseNextOccurrence(from time.Time, freq string) time.Time {
 	switch freq {
-	case string(ports.RecurringWeekly):
+	case string(dto.RecurringWeekly):
 		return from.AddDate(0, 0, 7)
-	case string(ports.RecurringBiWeekly):
+	case string(dto.RecurringBiWeekly):
 		return from.AddDate(0, 0, 14)
-	case string(ports.RecurringMonthly):
+	case string(dto.RecurringMonthly):
 		return from.AddDate(0, 1, 0)
-	case string(ports.RecurringAnnually):
+	case string(dto.RecurringAnnually):
 		return from.AddDate(1, 0, 0)
 	default:
 		return from.AddDate(0, 0, 7)

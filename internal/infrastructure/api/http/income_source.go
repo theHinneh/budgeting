@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/dtos"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
@@ -54,12 +55,12 @@ func (h *IncomeSourceHandler) AddIncomeSource(c *gin.Context) {
 
 	//parsedTime, err := time.Parse(layout, req.NextPayAt)
 
-	src, err := h.Service.AddIncomeSource(c.Request.Context(), ports.AddIncomeSourceInput{
+	src, err := h.Service.AddIncomeSource(c.Request.Context(), dto.AddIncomeSourceInput{
 		UserID:    requestedUserID,
 		Source:    req.Source,
 		Amount:    req.Amount,
 		Currency:  req.Currency,
-		Frequency: ports.PayFrequency(req.Frequency),
+		Frequency: dto.PayFrequency(req.Frequency),
 		NextPayAt: req.NextPayAt,
 		Notes:     req.Notes,
 	})

@@ -8,6 +8,7 @@ import (
 	firebase "firebase.google.com/go/v4"
 	fbAuth "firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
@@ -53,7 +54,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Create Firebase Auth user
 	authClient, err := h.firebaseApp.Auth(context.Background())
 	if err != nil {
 		response.ErrorResponse(c, "Failed to get Firebase Auth client", err, h.cfg.IsDevelopment())
@@ -75,8 +75,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Create user profile in our database using the Firebase UID
-	uid, err := h.Service.CreateUser(c.Request.Context(), ports.CreateUserInput{
+	uid, err := h.Service.CreateUser(c.Request.Context(), dto.CreateUserInput{
 		UID:         fbUser.UID,
 		Username:    strings.TrimSpace(req.Username),
 		Email:       strings.TrimSpace(req.Email),
@@ -85,7 +84,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		PhoneNumber: req.PhoneNumber,
 	})
 	if err != nil {
-		// If user creation in our database fails, attempt to delete Firebase Auth user
+
 		_ = authClient.DeleteUser(context.Background(), fbUser.UID)
 		response.ErrorResponse(c, "failed to create user profile", err, h.cfg.IsDevelopment())
 		return
@@ -152,7 +151,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	user, err := h.Service.UpdateUser(ctx, requestedUID, ports.UpdateUserInput{
+	user, err := h.Service.UpdateUser(ctx, requestedUID, dto.UpdateUserInput{
 		Username:    req.Username,
 		Email:       req.Email,
 		FirstName:   req.FirstName,
@@ -212,7 +211,7 @@ func (h *UserHandler) ForgotPassword(c *gin.Context) {
 		response.ErrorResponse(c, "failed to generate reset link", err, h.cfg.IsDevelopment())
 		return
 	}
-	// showing link for easy test in Postman
+
 	response.SuccessResponse(c, "password reset link generated", gin.H{"reset_link": link})
 }
 

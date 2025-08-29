@@ -4,34 +4,15 @@ import (
 	"context"
 	"time"
 
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/domain"
 )
 
-type AddExpenseInput struct {
-	UserID              string
-	Source              string
-	Amount              float64
-	Currency            string
-	Notes               string
-	IsRecurring         bool
-	RecurrenceFrequency string
-	NextOccurrenceDate  *time.Time
-}
-
-type ExpenseRecurrenceFrequency string
-
-const (
-	RecurringWeekly   ExpenseRecurrenceFrequency = "weekly"
-	RecurringBiWeekly ExpenseRecurrenceFrequency = "biweekly"
-	RecurringMonthly  ExpenseRecurrenceFrequency = "monthly"
-	RecurringAnnually ExpenseRecurrenceFrequency = "annually"
-)
-
 type ExpenseServicePort interface {
-	AddExpense(ctx context.Context, in AddExpenseInput) (*domain.Expense, error)
+	AddExpense(ctx context.Context, in dto.AddExpenseInput) (*domain.Expense, error)
 	ListExpenses(ctx context.Context, userID string) ([]*domain.Expense, error)
 	GetExpense(ctx context.Context, userID string, expenseID string) (*domain.Expense, error)
-	UpdateExpense(ctx context.Context, userID string, expenseID string, in AddExpenseInput) (*domain.Expense, error)
+	UpdateExpense(ctx context.Context, userID string, expenseID string, in dto.AddExpenseInput) (*domain.Expense, error)
 	DeleteExpense(ctx context.Context, userID string, expenseID string) error
 	ProcessDueExpenses(ctx context.Context, userID string, now time.Time) (int, error)
 }

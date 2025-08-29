@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/dtos"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
@@ -49,7 +50,7 @@ func (h *ExpenseHandler) AddExpense(c *gin.Context) {
 		return
 	}
 
-	input := ports.AddExpenseInput{
+	input := dto.AddExpenseInput{
 		UserID:              requestedUserID,
 		Source:              req.ToDomain().Source,
 		Amount:              req.ToDomain().Amount,
@@ -165,7 +166,7 @@ func (h *ExpenseHandler) UpdateExpense(c *gin.Context) {
 		return
 	}
 
-	input := ports.AddExpenseInput{
+	input := dto.AddExpenseInput{
 		Source:              req.ToDomain().Source,
 		Amount:              req.ToDomain().Amount,
 		Currency:            req.ToDomain().Currency,

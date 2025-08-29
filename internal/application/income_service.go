@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/domain"
 )
@@ -20,7 +21,7 @@ func NewIncomeService(repo ports.IncomeRepoPort) *IncomeService {
 
 var _ ports.IncomeServicePort = (*IncomeService)(nil)
 
-func (s *IncomeService) AddIncome(ctx context.Context, in ports.AddIncomeInput) (*domain.Income, error) {
+func (s *IncomeService) AddIncome(ctx context.Context, in dto.AddIncomeInput) (*domain.Income, error) {
 	userID := strings.TrimSpace(in.UserID)
 	source := strings.TrimSpace(in.Source)
 	currency := strings.TrimSpace(in.Currency)
@@ -58,23 +59,23 @@ func (s *IncomeService) DeleteIncome(ctx context.Context, userID string, incomeI
 	if userID == "" || incomeID == "" {
 		return ErrValidation
 	}
-	// Load the income to identify its Source
+
 	inc, err := s.repo.GetIncome(ctx, userID, incomeID)
 	if err != nil {
 		return err
 	}
-	// Delete the income entry
+
 	if err := s.repo.DeleteIncome(ctx, userID, incomeID); err != nil {
 		return err
 	}
-	// Also delete the corresponding income source(s) by Source string
+
 	if inc != nil && strings.TrimSpace(inc.Source) != "" {
 		_ = s.repo.DeleteIncomeSource(ctx, userID, inc.Source)
 	}
 	return nil
 }
 
-func (s *IncomeService) AddIncomeSource(ctx context.Context, in ports.AddIncomeSourceInput) (*domain.IncomeSource, error) {
+func (s *IncomeService) AddIncomeSource(ctx context.Context, in dto.AddIncomeSourceInput) (*domain.IncomeSource, error) {
 	userID := strings.TrimSpace(in.UserID)
 	source := strings.TrimSpace(in.Source)
 	currency := strings.TrimSpace(in.Currency)
@@ -153,7 +154,7 @@ func (s *IncomeService) ProcessDueIncomes(ctx context.Context, userID string, no
 			count++
 			next = advanceNext(next, src.Frequency)
 		}
-		// Persist updated next pay date
+
 		_ = s.repo.UpdateIncomeSource(ctx, userID, src.UID, map[string]interface{}{
 			"NextPayAt": next,
 			"UpdatedAt": time.Now().UTC(),
@@ -164,7 +165,7 @@ func (s *IncomeService) ProcessDueIncomes(ctx context.Context, userID string, no
 
 func isValidFrequency(freq string) bool {
 	switch freq {
-	case string(ports.PayWeekly), string(ports.PayBiWeekly), string(ports.PayMonthly):
+	case string(dto.PayWeekly), string(dto.PayBiWeekly), string(dto.PayMonthly):
 		return true
 	default:
 		return false
@@ -173,11 +174,11 @@ func isValidFrequency(freq string) bool {
 
 func advanceNext(from time.Time, freq string) time.Time {
 	switch freq {
-	case string(ports.PayWeekly):
+	case string(dto.PayWeekly):
 		return from.AddDate(0, 0, 7)
-	case string(ports.PayBiWeekly):
+	case string(dto.PayBiWeekly):
 		return from.AddDate(0, 0, 14)
-	case string(ports.PayMonthly):
+	case string(dto.PayMonthly):
 		return from.AddDate(0, 1, 0)
 	default:
 		return from.AddDate(0, 0, 7)

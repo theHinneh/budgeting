@@ -6,6 +6,7 @@ import (
 
 	fb "firebase.google.com/go/v4"
 	fbAuth "firebase.google.com/go/v4/auth"
+	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	"google.golang.org/api/option"
 
@@ -23,6 +24,8 @@ type Database struct {
 	ExpenseRepository      *ExpenseRepository
 	IncomeSourceRepository *IncomeRepository
 	RefreshTokenRepository *RefreshTokenRepository
+	TokenAuthenticator     ports.TokenAuthenticator
+	TokenGenerator         ports.TokenGenerator
 }
 
 func NewDatabase(ctx context.Context, cfg *config.Configuration) (*Database, error) {
@@ -78,6 +81,8 @@ func NewDatabase(ctx context.Context, cfg *config.Configuration) (*Database, err
 		IncomeRepository:       &IncomeRepository{Firestore: fsClient},
 		IncomeSourceRepository: &IncomeRepository{Firestore: fsClient},
 		RefreshTokenRepository: &RefreshTokenRepository{Firestore: fsClient},
+		TokenAuthenticator:     NewFirebaseTokenAuthenticator(authClient),
+		TokenGenerator:         NewFirebaseTokenGenerator(),
 	}, nil
 }
 

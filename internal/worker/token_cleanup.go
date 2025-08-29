@@ -4,20 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/theHinneh/budgeting/internal/application"
+	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/logger"
 	"go.uber.org/zap"
 )
 
-// StartTokenCleanupWorker starts a background worker that periodically cleans up expired refresh tokens
-func StartTokenCleanupWorker(authService *application.AuthService) {
+func StartTokenCleanupWorker(authService ports.AuthServicePort) {
 	go func() {
-		ticker := time.NewTicker(24 * time.Hour) // Run once every 24 hours
+		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
 
 		logger.Info("Starting token cleanup worker")
 
-		// Run cleanup immediately on startup
 		if err := cleanupExpiredTokens(authService); err != nil {
 			logger.Error("Failed to cleanup expired tokens on startup", zap.Error(err))
 		}
@@ -33,7 +31,7 @@ func StartTokenCleanupWorker(authService *application.AuthService) {
 	}()
 }
 
-func cleanupExpiredTokens(authService *application.AuthService) error {
+func cleanupExpiredTokens(authService ports.AuthServicePort) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 

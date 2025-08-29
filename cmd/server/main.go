@@ -66,13 +66,15 @@ func main() {
 		fbInstance.ExpenseRepository,
 	)
 
-	// Create authentication service
 	authService := application.NewAuthService(
 		fbInstance.RefreshTokenRepository,
-		fbInstance.UserAuthenticator,
+		fbInstance.TokenAuthenticator,
+		fbInstance.TokenGenerator,
 	)
 
-	router := api_http.NewRouter(healthHandler, userService, incomeService, expenseService, netWorthService, fbInstance.App, authService, cfg)
+	router := api_http.NewRouter(
+		healthHandler, userService, incomeService, expenseService, netWorthService, fbInstance.App, authService, cfg,
+	)
 
 	serverConfig := cfg.GetServerConfig()
 	port := serverConfig.Port

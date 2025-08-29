@@ -6,7 +6,7 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/internal/application"
+	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/dtos"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 	"github.com/theHinneh/budgeting/internal/infrastructure/response"
@@ -14,11 +14,11 @@ import (
 
 type AuthHandler struct {
 	firebaseApp *firebase.App
-	authService *application.AuthService
+	authService ports.AuthServicePort
 	cfg         *config.Configuration
 }
 
-func NewAuthHandler(app *firebase.App, authService *application.AuthService, cfg *config.Configuration) *AuthHandler {
+func NewAuthHandler(app *firebase.App, authService ports.AuthServicePort, cfg *config.Configuration) *AuthHandler {
 	if app == nil || authService == nil || cfg == nil {
 		return nil
 	}
@@ -32,48 +32,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	authClient, err := h.firebaseApp.Auth(context.Background())
-	if err != nil {
-		response.ErrorResponse(c, "Failed to get Firebase Auth client", err, h.cfg.IsDevelopment())
-		return
-	}
-
-	user, err := authClient.GetUserByEmail(c.Request.Context(), req.Email)
-	if err != nil {
-		response.ErrorResponse(c, "Invalid email or password", err, h.cfg.IsDevelopment())
-		return
-	}
-
-	// Generate access token
-	accessToken, err := h.authService.GenerateAccessToken(c.Request.Context(), user.UID)
-	if err != nil {
-		response.ErrorResponse(c, "Failed to generate access token", err, h.cfg.IsDevelopment())
-		return
-	}
-
-	// Get client information for refresh token
 	deviceInfo := c.GetHeader("User-Agent")
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	// Create refresh token
-	refreshToken, err := h.authService.CreateRefreshToken(c.Request.Context(), user.UID, deviceInfo, ipAddress, userAgent)
+	loginResponse, err := h.authService.Login(c.Request.Context(), req.Email, req.Password, deviceInfo, ipAddress, userAgent)
 	if err != nil {
-		response.ErrorResponse(c, "Failed to create refresh token", err, h.cfg.IsDevelopment())
+		response.ErrorResponse(c, "Login failed", err, h.cfg.IsDevelopment())
 		return
-	}
-
-	loginResponse := dtos.LoginResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken.TokenHash, // Return the original token hash
-		ExpiresIn:    3600,                   // 1 hour
-		TokenType:    "Bearer",
-		User: dtos.UserInfo{
-			UID:         user.UID,
-			Email:       user.Email,
-			DisplayName: user.DisplayName,
-			PhoneNumber: &user.PhoneNumber,
-		},
 	}
 
 	response.SuccessResponseData(c, loginResponse)
@@ -86,57 +52,14 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	// Get Firebase Auth client
-	authClient, err := h.firebaseApp.Auth(context.Background())
-	if err != nil {
-		response.ErrorResponse(c, "Failed to get Firebase Auth client", err, h.cfg.IsDevelopment())
-		return
-	}
-
-	// Verify the refresh token to get user ID
-	token, err := authClient.VerifyIDToken(c.Request.Context(), req.RefreshToken)
-	if err != nil {
-		response.ErrorResponse(c, "Invalid refresh token", err, h.cfg.IsDevelopment())
-		return
-	}
-
-	// Validate the refresh token in our database
-	refreshToken, err := h.authService.ValidateRefreshToken(c.Request.Context(), token.UID, req.RefreshToken)
-	if err != nil {
-		response.ErrorResponse(c, "Invalid or expired refresh token", err, h.cfg.IsDevelopment())
-		return
-	}
-
-	// Generate new access token
-	newAccessToken, err := h.authService.GenerateAccessToken(c.Request.Context(), token.UID)
-	if err != nil {
-		response.ErrorResponse(c, "Failed to generate new access token", err, h.cfg.IsDevelopment())
-		return
-	}
-
-	// Get client information for new refresh token
 	deviceInfo := c.GetHeader("User-Agent")
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	// Create new refresh token
-	newRefreshToken, err := h.authService.CreateRefreshToken(c.Request.Context(), token.UID, deviceInfo, ipAddress, userAgent)
+	refreshResponse, err := h.authService.RefreshToken(c.Request.Context(), req.RefreshToken, deviceInfo, ipAddress, userAgent)
 	if err != nil {
-		response.ErrorResponse(c, "Failed to generate new refresh token", err, h.cfg.IsDevelopment())
+		response.ErrorResponse(c, "Token refresh failed", err, h.cfg.IsDevelopment())
 		return
-	}
-
-	// Revoke the old refresh token
-	if err := h.authService.RevokeRefreshToken(c.Request.Context(), refreshToken.ID); err != nil {
-		// Log the error but don't fail the request
-		// In production, you might want to log this
-	}
-
-	refreshResponse := dtos.RefreshTokenResponse{
-		AccessToken:  newAccessToken,
-		RefreshToken: newRefreshToken.TokenHash,
-		ExpiresIn:    3600, // 1 hour
-		TokenType:    "Bearer",
 	}
 
 	response.SuccessResponseData(c, refreshResponse)
@@ -149,29 +72,25 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	// Get Firebase Auth client
 	authClient, err := h.firebaseApp.Auth(context.Background())
 	if err != nil {
 		response.ErrorResponse(c, "Failed to get Firebase Auth client", err, h.cfg.IsDevelopment())
 		return
 	}
 
-	// Verify the refresh token to get user ID
 	token, err := authClient.VerifyIDToken(c.Request.Context(), req.RefreshToken)
 	if err != nil {
 		response.ErrorResponse(c, "Invalid refresh token", err, h.cfg.IsDevelopment())
 		return
 	}
 
-	// Validate the refresh token in our database
 	refreshToken, err := h.authService.ValidateRefreshToken(c.Request.Context(), token.UID, req.RefreshToken)
 	if err != nil {
 		response.ErrorResponse(c, "Invalid or expired refresh token", err, h.cfg.IsDevelopment())
 		return
 	}
 
-	// Revoke the specific refresh token
-	if err := h.authService.RevokeRefreshToken(c.Request.Context(), refreshToken.ID); err != nil {
+	if err := h.authService.RevokeSession(c.Request.Context(), refreshToken.ID); err != nil {
 		response.ErrorResponse(c, "Failed to revoke refresh token", err, h.cfg.IsDevelopment())
 		return
 	}
@@ -211,23 +130,19 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	response.SuccessResponseData(c, userInfo)
 }
 
-// GetUserSessions returns all active sessions for the current user
 func (h *AuthHandler) GetUserSessions(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("firebaseUID")
 	if !exists {
 		response.ErrorResponse(c, "User not authenticated", nil, h.cfg.IsDevelopment())
 		return
 	}
 
-	// Get all user tokens
-	tokens, err := h.authService.GetUserTokens(c.Request.Context(), userID.(string))
+	tokens, err := h.authService.GetUserSessions(c.Request.Context(), userID.(string))
 	if err != nil {
 		response.ErrorResponse(c, "Failed to get user sessions", err, h.cfg.IsDevelopment())
 		return
 	}
 
-	// Convert to session info
 	var sessions []dtos.SessionInfo
 	for _, token := range tokens {
 		if !token.IsRevoked {
@@ -238,7 +153,7 @@ func (h *AuthHandler) GetUserSessions(c *gin.Context) {
 				UserAgent:  token.UserAgent,
 				CreatedAt:  token.CreatedAt.Format(time.RFC3339),
 				ExpiresAt:  token.ExpiresAt.Format(time.RFC3339),
-				IsCurrent:  false, // You could implement logic to determine current session
+				IsCurrent:  false,
 			}
 			sessions = append(sessions, session)
 		}
@@ -247,9 +162,7 @@ func (h *AuthHandler) GetUserSessions(c *gin.Context) {
 	response.SuccessResponseData(c, sessions)
 }
 
-// RevokeSession revokes a specific session
 func (h *AuthHandler) RevokeSession(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
 	_, exists := c.Get("firebaseUID")
 	if !exists {
 		response.ErrorResponse(c, "User not authenticated", nil, h.cfg.IsDevelopment())
@@ -262,8 +175,7 @@ func (h *AuthHandler) RevokeSession(c *gin.Context) {
 		return
 	}
 
-	// Revoke the session
-	if err := h.authService.RevokeRefreshToken(c.Request.Context(), req.SessionID); err != nil {
+	if err := h.authService.RevokeSession(c.Request.Context(), req.SessionID); err != nil {
 		response.ErrorResponse(c, "Failed to revoke session", err, h.cfg.IsDevelopment())
 		return
 	}
@@ -273,17 +185,14 @@ func (h *AuthHandler) RevokeSession(c *gin.Context) {
 	})
 }
 
-// RevokeAllSessions revokes all sessions for the current user
 func (h *AuthHandler) RevokeAllSessions(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("firebaseUID")
 	if !exists {
 		response.ErrorResponse(c, "User not authenticated", nil, h.cfg.IsDevelopment())
 		return
 	}
 
-	// Revoke all user tokens
-	if err := h.authService.RevokeAllUserTokens(c.Request.Context(), userID.(string)); err != nil {
+	if err := h.authService.RevokeAllUserSessions(c.Request.Context(), userID.(string)); err != nil {
 		response.ErrorResponse(c, "Failed to revoke all sessions", err, h.cfg.IsDevelopment())
 		return
 	}

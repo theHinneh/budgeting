@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/dtos"
 	"github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
@@ -48,7 +49,7 @@ func (h *IncomeHandler) AddIncome(c *gin.Context) {
 		response.ErrorResponse(c, "invalid request body", err, h.cfg.IsDevelopment())
 		return
 	}
-	income, err := h.Service.AddIncome(c.Request.Context(), ports.AddIncomeInput{
+	income, err := h.Service.AddIncome(c.Request.Context(), dto.AddIncomeInput{
 		UserID:   requestedUserID,
 		Source:   req.ToDomain().Source,
 		Amount:   req.ToDomain().Amount,
@@ -91,12 +92,12 @@ func (h *IncomeHandler) AddIncomeSource(c *gin.Context) {
 
 	//parsedTime, err := time.Parse(layout, req.NextPayAt)
 
-	src, err := h.Service.AddIncomeSource(c.Request.Context(), ports.AddIncomeSourceInput{
+	src, err := h.Service.AddIncomeSource(c.Request.Context(), dto.AddIncomeSourceInput{
 		UserID:    requestedUserID,
 		Source:    req.Source,
 		Amount:    req.Amount,
 		Currency:  req.Currency,
-		Frequency: ports.PayFrequency(req.Frequency),
+		Frequency: dto.PayFrequency(req.Frequency),
 		NextPayAt: req.NextPayAt,
 		Notes:     req.Notes,
 	})

@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"context"
 	"time"
 )
 
@@ -16,15 +15,4 @@ type RefreshToken struct {
 	DeviceInfo string     `json:"device_info,omitempty" firestore:"device_info,omitempty"`
 	IPAddress  string     `json:"ip_address,omitempty" firestore:"ip_address,omitempty"`
 	UserAgent  string     `json:"user_agent,omitempty" firestore:"user_agent,omitempty"`
-}
-
-type RefreshTokenRepository interface {
-	Create(ctx context.Context, token *RefreshToken) error
-	GetByID(ctx context.Context, id string) (*RefreshToken, error)
-	GetByUserID(ctx context.Context, userID string) ([]*RefreshToken, error)
-	GetValidToken(ctx context.Context, userID, tokenHash string) (*RefreshToken, error)
-	RevokeToken(ctx context.Context, id string) error
-	RevokeAllUserTokens(ctx context.Context, userID string) error
-	DeleteExpiredTokens(ctx context.Context) error
-	DeleteToken(ctx context.Context, id string) error
 }

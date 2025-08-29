@@ -3,30 +3,14 @@ package ports
 import (
 	"context"
 
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/domain"
 )
 
-type CreateUserInput struct {
-	UID         string
-	Username    string
-	Email       string
-	FirstName   string
-	LastName    string
-	PhoneNumber *string
-}
-
-type UpdateUserInput struct {
-	Username    *string
-	Email       *string
-	FirstName   *string
-	LastName    *string
-	PhoneNumber *string
-}
-
 type UserServicePort interface {
-	CreateUser(ctx context.Context, in CreateUserInput) (string, error)
+	CreateUser(ctx context.Context, in dto.CreateUserInput) (string, error)
 	GetUser(ctx context.Context, uid string) (*domain.User, error)
-	UpdateUser(ctx context.Context, uid string, in UpdateUserInput) (*domain.User, error)
+	UpdateUser(ctx context.Context, uid string, in dto.UpdateUserInput) (*domain.User, error)
 	DeleteUser(ctx context.Context, uid string) error
 
 	ForgotPassword(ctx context.Context, email string) (string, error)

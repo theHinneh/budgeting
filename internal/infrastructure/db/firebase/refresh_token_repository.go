@@ -2,8 +2,6 @@ package firebase
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -21,15 +19,11 @@ type RefreshTokenRepository struct {
 const refreshTokensCollection = "refresh_tokens"
 
 func (r *RefreshTokenRepository) Create(ctx context.Context, token *domain.RefreshToken) error {
-	// Hash the token for security
-	token.TokenHash = hashToken(token.TokenHash)
 
-	// Set creation time
 	if token.CreatedAt.IsZero() {
 		token.CreatedAt = time.Now()
 	}
 
-	// Generate a unique ID if not provided
 	if token.ID == "" {
 		token.ID = generateTokenID()
 	}
@@ -81,11 +75,9 @@ func (r *RefreshTokenRepository) GetByUserID(ctx context.Context, userID string)
 }
 
 func (r *RefreshTokenRepository) GetValidToken(ctx context.Context, userID, tokenHash string) (*domain.RefreshToken, error) {
-	hashedToken := hashToken(tokenHash)
-
 	iter := r.Firestore.Collection(refreshTokensCollection).
 		Where("user_id", "==", userID).
-		Where("token_hash", "==", hashedToken).
+		Where("token_hash", "==", tokenHash).
 		Where("is_revoked", "==", false).
 		Where("expires_at", ">", time.Now()).
 		Limit(1).
@@ -182,12 +174,6 @@ func (r *RefreshTokenRepository) DeleteExpiredTokens(ctx context.Context) error 
 func (r *RefreshTokenRepository) DeleteToken(ctx context.Context, id string) error {
 	_, err := r.Firestore.Collection(refreshTokensCollection).Doc(id).Delete(ctx)
 	return err
-}
-
-// Helper functions
-func hashToken(token string) string {
-	hash := sha256.Sum256([]byte(token))
-	return hex.EncodeToString(hash[:])
 }
 
 func generateTokenID() string {

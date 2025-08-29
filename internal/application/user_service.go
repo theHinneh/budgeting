@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/theHinneh/budgeting/internal/application/dto"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	"github.com/theHinneh/budgeting/internal/domain"
 )
@@ -20,13 +21,12 @@ func NewUserService(userRepo ports.UserRepository, authenticator ports.UserAuthe
 
 var _ ports.UserServicePort = (*UserService)(nil)
 
-func (s *UserService) CreateUser(ctx context.Context, in ports.CreateUserInput) (string, error) {
-	// Basic validation
+func (s *UserService) CreateUser(ctx context.Context, in dto.CreateUserInput) (string, error) {
+
 	if strings.TrimSpace(in.Username) == "" || strings.TrimSpace(in.Email) == "" || strings.TrimSpace(in.FirstName) == "" || strings.TrimSpace(in.LastName) == "" || strings.TrimSpace(in.UID) == "" {
 		return "", ErrValidation
 	}
 
-	// Build and store profile
 	user := domain.NewUser(in.UID, in.Username, in.Email, in.FirstName, in.LastName, in.PhoneNumber)
 
 	_, err := s.userRepo.CreateUser(ctx, user)
@@ -40,7 +40,7 @@ func (s *UserService) GetUser(ctx context.Context, uid string) (*domain.User, er
 	return s.userRepo.GetUser(ctx, strings.TrimSpace(uid))
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, uid string, in ports.UpdateUserInput) (*domain.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, uid string, in dto.UpdateUserInput) (*domain.User, error) {
 	uid = strings.TrimSpace(uid)
 	updates := map[string]interface{}{
 		"UpdatedAt": time.Now().UTC(),

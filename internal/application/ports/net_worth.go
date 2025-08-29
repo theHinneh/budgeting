@@ -2,15 +2,10 @@ package ports
 
 import (
 	"context"
+
+	"github.com/theHinneh/budgeting/internal/application/dto"
 )
 
-type NetWorthResponse struct {
-	TotalIncome  float64 `json:"total_income"`
-	TotalExpense float64 `json:"total_expense"`
-	NetWorth     float64 `json:"net_worth"`
-	Currency     string  `json:"currency"`
-}
-
 type NetWorthServicePort interface {
-	GetNetWorth(ctx context.Context, userID string) (*NetWorthResponse, error)
+	GetNetWorth(ctx context.Context, userID string) (*dto.NetWorthResponse, error)
 }

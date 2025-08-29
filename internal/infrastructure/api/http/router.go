@@ -5,13 +5,16 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
-	"github.com/theHinneh/budgeting/internal/application"
 	"github.com/theHinneh/budgeting/internal/application/ports"
 	middleware2 "github.com/theHinneh/budgeting/internal/infrastructure/api/middleware"
 	"github.com/theHinneh/budgeting/internal/infrastructure/config"
 )
 
-func NewRouter(healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort, expenseService ports.ExpenseServicePort, netWorthService ports.NetWorthServicePort, firebaseApp *firebase.App, authService *application.AuthService, cfg *config.Configuration) *gin.Engine {
+func NewRouter(
+	healthHandler *HealthHandler, userService ports.UserServicePort, incomeService ports.IncomeServicePort,
+	expenseService ports.ExpenseServicePort, netWorthService ports.NetWorthServicePort, firebaseApp *firebase.App,
+	authService ports.AuthServicePort, cfg *config.Configuration,
+) *gin.Engine {
 	router := gin.Default()
 
 	serverConfig := cfg.GetServerConfig()
